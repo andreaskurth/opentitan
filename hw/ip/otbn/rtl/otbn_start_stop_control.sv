@@ -94,7 +94,7 @@ module otbn_start_stop_control
 
   // SEC_CM: START_STOP_CTRL.FSM.SPARSE
   `PRIM_FLOP_SPARSE_FSM(u_state_regs, state_d, state_q,
-      otbn_start_stop_state_e, OtbnStartStopStateHalt)
+      otbn_start_stop_state_e, OtbnStartStopStateInitial)
 
   always_comb begin
     urnd_reseed_req_o       = 1'b0;
@@ -117,6 +117,13 @@ module otbn_start_stop_control
     spurious_urnd_ack_error = 1'b0;
 
     unique case (state_q)
+      OtbnStartStopStateInitial: begin
+        urnd_reseed_req_o = 1'b1;
+        if (urnd_reseed_ack_i) begin
+          urnd_advance_o = 1'b1;
+          state_d = OtbnStartStopStateHalt;
+        end
+      end
       OtbnStartStopStateHalt: begin
         if (stop) begin
           state_d = OtbnStartStopStateLocked;
@@ -207,7 +214,8 @@ module otbn_start_stop_control
       end
     endcase
 
-    if (urnd_reseed_ack_i && (state_q != OtbnStartStopStateUrndRefresh)) begin
+    if (urnd_reseed_ack_i &&
+        !(state_q inside {OtbnStartStopStateInitial, OtbnStartStopStateUrndRefresh})) begin
       // We should never receive an ACK from URND when we're not refreshing the URND. Signal an
       // error if we see a stray ACK and lock the FSM.
       spurious_urnd_ack_error = 1'b1;
@@ -252,7 +260,8 @@ module otbn_start_stop_control
   assign fatal_error_o = spurious_urnd_ack_error | state_error | secure_wipe_error_q;
 
   `ASSERT(StartStopStateValid_A,
-      state_q inside {OtbnStartStopStateHalt,
+      state_q inside {OtbnStartStopStateInitial,
+                      OtbnStartStopStateHalt,
                       OtbnStartStopStateUrndRefresh,
                       OtbnStartStopStateRunning,
                       OtbnStartStopSecureWipeWdrUrnd,

@@ -64,6 +64,11 @@ class OTBNSim:
         self._next_insn = None
         self.state.start()
 
+    def initial_secure_wipe(self) -> None:
+        '''This is run at the start of a secure wipe after reset.'''
+        # OTBN will request a new URND value, so the model has to do the same.
+        self.state._urnd_client.request()
+
     def start_mem_wipe(self, is_imem: bool) -> None:
         if self.state.get_fsm_state() != FsmState.IDLE:
             return

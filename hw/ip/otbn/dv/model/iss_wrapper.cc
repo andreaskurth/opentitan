@@ -489,6 +489,10 @@ void ISSWrapper::set_software_errs_fatal(bool new_val) {
   run_command(oss.str(), nullptr);
 }
 
+void ISSWrapper::initial_secure_wipe() {
+  run_command("initial_secure_wipe\n", nullptr);
+}
+
 uint32_t ISSWrapper::step_crc(const std::array<uint8_t, 6> &item,
                               uint32_t state) const {
   std::vector<std::string> lines;
