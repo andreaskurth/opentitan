@@ -44,6 +44,8 @@ module otbn_core_model
   output logic               edn_urnd_o, // EDN request interface for URND seed
   input  logic               edn_urnd_cdc_done_i, // URND seed from EDN is valid (DUT perspective)
 
+  input  logic           init_sec_wipe_done_i,
+
   input  logic           otp_key_cdc_done_i, // Scrambling key from OTP is valid (DUT perspective)
 
   output bit [7:0]       status_o,   // STATUS register
@@ -67,6 +69,9 @@ module otbn_core_model
   final begin
     otbn_model_destroy(model_handle);
   end
+
+  // The reset value of the STATUS register, which has to be kept in sync with `otbn.hjson`.
+  localparam bit [7:0] StatusResetVal = otbn_pkg::StatusInitSecWipe;
 
   // A packed set of bits representing the state of the model. This gets assigned by DPI function
   // calls that need to update both whether we're running and also error flags at the same time. The
@@ -192,7 +197,7 @@ module otbn_core_model
   end
 
   assign reset_busy_counter = |{running, cmd_en_i, check_due, new_escalation, edn_rnd_cdc_done_i,
-                                wakeup_iss};
+                                ~init_sec_wipe_done_i, wakeup_iss};
   assign step_iss = reset_busy_counter || (busy_counter_q != 0);
 
   always_comb begin
@@ -218,6 +223,11 @@ module otbn_core_model
   bit failed_reset, failed_lc_escalate, failed_keymgr_value;
   bit failed_urnd_cdc, failed_rnd_cdc, failed_otp_key_cdc;
   bit failed_initial_secure_wipe, initial_secure_wipe_started;
+  // Some signals require an initial value (i.e., even prior to the first reset negative edge) to
+  // correctly bootstrap the testbench.
+  initial begin
+    status_q = StatusResetVal;
+  end
   always @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
       failed_reset <= (otbn_model_reset(model_handle) != 0);
@@ -230,7 +240,7 @@ module otbn_core_model
       initial_urnd_reseed_done <= 0;
       initial_secure_wipe_started <= 0;
       model_state <= 0;
-      status_q <= 0;
+      status_q <= StatusResetVal;
       insn_cnt_q <= 0;
       rnd_req_start_q <= 0;
       raw_err_bits_q <= 0;
@@ -341,7 +351,7 @@ module otbn_core_model
   // It's analogous to the done_o signal on otbn_core, but this signal is delayed by a single cycle
   // (hence its name is done_r_o).
   bit otbn_model_busy, otbn_model_busy_r;
-  assign otbn_model_busy = (status_q != StatusIdle) && (status_q != StatusLocked);
+  assign otbn_model_busy = !(status_q inside {StatusIdle, StatusInitSecWipe, StatusLocked});
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
       otbn_model_busy_r <= 1'b0;

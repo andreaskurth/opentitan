@@ -110,11 +110,15 @@ package otbn_env_pkg;
   typedef enum {
     OperationalStateIdle,
     OperationalStateBusy,
-    OperationalStateLocked
+    OperationalStateLocked,
+    OperationalStateInitSecWipe
   } operational_state_e;
 
   function automatic operational_state_e get_operational_state(status_e status);
     unique case (status)
+      otbn_pkg::StatusInitSecWipe:
+        return OperationalStateInitSecWipe;
+
       otbn_pkg::StatusBusyExecute,
       otbn_pkg::StatusBusySecWipeDmem,
       otbn_pkg::StatusBusySecWipeImem:

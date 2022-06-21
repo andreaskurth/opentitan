@@ -344,7 +344,7 @@
       fields: [
         { bits: "7:0",
           name: "status",
-          resval: 0,
+          resval: "0x10",
           // Note: Keep the list of status codes in sync with status_e in
           // otbn_pkg.sv.
           desc: '''
@@ -381,6 +381,11 @@
                   <td>0x03</td>
                   <td>BUSY_SEC_WIPE_IMEM</td>
                   <td>OTBN is busy securely wiping the instruction memory.</td>
+                </tr>
+                <tr>
+                  <td>0x10</td>
+                  <td>INIT_SEC_WIPE</td>
+                  <td>OTBN is busy with the initial internal secure wipe.</td>
                 </tr>
                 <tr>
                   <td>0xFF</td>

@@ -37,6 +37,7 @@ int otbn_stack_element_peek(int index, svBitVecVal *val);
 #define STATUS_BUSY_EXECUTE 0x01
 #define STATUS_BUSY_SEC_WIPE_DMEM 0x02
 #define STATUS_BUSY_SEC_WIPE_IMEM 0x03
+#define STATUS_INIT_SEC_WIPE 0x10
 #define STATUS_LOCKED 0xFF
 
 // Read (the start of) the contents of a file at path as a vector of bytes.

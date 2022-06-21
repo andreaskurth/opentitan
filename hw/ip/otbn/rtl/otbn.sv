@@ -99,6 +99,7 @@ module otbn
   logic mems_sec_wipe;
   logic req_sec_wipe_urnd_keys;
   logic [127:0] dmem_sec_wipe_urnd_key, imem_sec_wipe_urnd_key;
+  logic init_sec_wipe_done;
 
   logic core_recoverable_err, recoverable_err_d, recoverable_err_q;
   mubi4_t core_escalate_en;
@@ -791,13 +792,14 @@ module otbn
   // combinatorially on the cycle that an error is injected. The STATUS register change, done
   // interrupt and any change to the idle signal will be delayed by 2 cycles.
   assign status_d = locking                         ? StatusLocked          :
+                    ~init_sec_wipe_done             ? StatusInitSecWipe     :
                     busy_execute_d                  ? StatusBusyExecute     :
                     otbn_dmem_scramble_key_req_busy ? StatusBusySecWipeDmem :
                     otbn_imem_scramble_key_req_busy ? StatusBusySecWipeImem :
                                                       StatusIdle;
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
-      status_q <= StatusIdle;
+      status_q <= StatusInitSecWipe;
     end else begin
       status_q <= status_d;
     end
@@ -1074,6 +1076,8 @@ module otbn
     .dmem_sec_wipe_urnd_key_o    (dmem_sec_wipe_urnd_key),
     .imem_sec_wipe_urnd_key_o    (imem_sec_wipe_urnd_key),
     .req_sec_wipe_urnd_keys_i    (req_sec_wipe_urnd_keys),
+
+    .init_sec_wipe_done_o        (init_sec_wipe_done),
 
     .escalate_en_i               (core_escalate_en),
 

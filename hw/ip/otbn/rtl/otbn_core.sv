@@ -74,6 +74,8 @@ module otbn_core
   output logic [127:0] dmem_sec_wipe_urnd_key_o, // URND bits to give temporary dmem scramble key
   output logic [127:0] imem_sec_wipe_urnd_key_o, // URND bits to give temporary imem scramble key
 
+  output logic init_sec_wipe_done_o,
+
   // Indicates an incoming escalation from some fatal error at the level above. The core needs to
   // halt and then enter a locked state.
   input prim_mubi_pkg::mubi4_t escalate_en_i,
@@ -272,6 +274,7 @@ module otbn_core
 
     .secure_wipe_req_i (secure_wipe_req),
     .secure_wipe_ack_o (secure_wipe_ack),
+    .init_sec_wipe_done_o,
     .done_o,
 
     .sec_wipe_wdr_o      (sec_wipe_wdr_d),
@@ -496,9 +499,10 @@ module otbn_core
     .rnd_valid_i       (rnd_valid),
 
     // Secure wipe
-    .secure_wipe_req_o (secure_wipe_req),
-    .secure_wipe_ack_i (secure_wipe_ack),
-    .sec_wipe_zero_i   (sec_wipe_zero),
+    .secure_wipe_req_o    (secure_wipe_req),
+    .secure_wipe_ack_i    (secure_wipe_ack),
+    .sec_wipe_zero_i      (sec_wipe_zero),
+    .init_sec_wipe_done_i (init_sec_wipe_done_o),
 
     .state_reset_i(state_reset),
     .insn_cnt_o   (insn_cnt),

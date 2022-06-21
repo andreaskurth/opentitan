@@ -522,9 +522,11 @@ void ISSWrapper::reset(bool gen_trace) {
 
   mirrored_.rnd_req = 0;
 
-  // Zero our mirror of STATUS: the initial zero value for the next run doesn't
-  // get reported by the ISS.
-  mirrored_.status = 0;
+  // The mirrored STATUS register from the ISS. The initial value has to be kept
+  // in sync with the reset value of the STATUS register defined in
+  // `otbn.hjson`, because the ISS does not report the initial value for the
+  // first run.
+  mirrored_.status = 0x10;
 }
 
 void ISSWrapper::send_err_escalation(uint32_t err_val) {

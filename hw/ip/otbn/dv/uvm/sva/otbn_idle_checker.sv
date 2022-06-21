@@ -21,6 +21,7 @@ module otbn_idle_checker
   input logic otbn_imem_scramble_key_req_busy_i,
 
   input logic [7:0] status_q_i,
+  input logic init_sec_wipe_done,
   input logic [38:0] imem_rdata_bus,
   input logic [ExtWLEN-1:0] dmem_rdata_bus
 );
@@ -50,7 +51,8 @@ module otbn_idle_checker
 
   assign do_start = start_req && (hw2reg.status.d == otbn_pkg::StatusIdle);
 
-  // Our model of whether OTBN is running or not. We start on do_start and stop on done.
+  // Our model of whether OTBN is running or not. We start on `do_start` once the initial secure
+  // wipe is done, and we stop on `done`.
   logic running_qq, running_q, running_d;
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
@@ -61,7 +63,7 @@ module otbn_idle_checker
       running_qq <= running_q;
     end
   end
-  assign running_d = (do_start & ~running_q) | (running_q & ~done);
+  assign running_d = (do_start & init_sec_wipe_done & ~running_q) | (running_q & ~done);
 
   // We should never see done when we're not already running. The converse assertion, that we never
   // see cmd_start when we are running, need not be true: the host can do that if it likes and OTBN

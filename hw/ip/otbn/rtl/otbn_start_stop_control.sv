@@ -40,6 +40,7 @@ module otbn_start_stop_control
 
   input   logic secure_wipe_req_i,
   output  logic secure_wipe_ack_o,
+  output  logic init_sec_wipe_done_o,
   output  logic done_o,
 
   output logic       sec_wipe_wdr_o,
@@ -60,6 +61,7 @@ module otbn_start_stop_control
   import otbn_pkg::*;
 
   otbn_start_stop_state_e state_q, state_d;
+  logic init_sec_wipe_done_q, init_sec_wipe_done_d;
 
   logic addr_cnt_inc;
   logic [4:0] addr_cnt_q, addr_cnt_d;
@@ -100,6 +102,7 @@ module otbn_start_stop_control
     urnd_reseed_req_o       = 1'b0;
     urnd_advance_o          = 1'b0;
     state_d                 = state_q;
+    init_sec_wipe_done_d    = init_sec_wipe_done_q;
     ispr_init_o             = 1'b0;
     state_reset_o           = 1'b0;
     sec_wipe_wdr_o          = 1'b0;
@@ -121,7 +124,7 @@ module otbn_start_stop_control
         urnd_reseed_req_o = 1'b1;
         if (urnd_reseed_ack_i) begin
           urnd_advance_o = 1'b1;
-          state_d = OtbnStartStopStateHalt;
+          state_d = OtbnStartStopSecureWipeWdrUrnd;
         end
       end
       OtbnStartStopStateHalt: begin
@@ -198,6 +201,7 @@ module otbn_start_stop_control
       end
       OtbnStartStopSecureWipeComplete: begin
         urnd_advance_o = 1'b1;
+        init_sec_wipe_done_d = 1'b1;
         state_d = should_lock_d ? OtbnStartStopStateLocked : OtbnStartStopStateHalt;
       end
       OtbnStartStopStateLocked: begin
@@ -226,25 +230,35 @@ module otbn_start_stop_control
   // Logic separate from main FSM code to avoid false combinational loop warning from verilator
   assign controller_start_o = (state_q == OtbnStartStopStateUrndRefresh) & urnd_reseed_ack_i;
 
-  assign done_o = ((state_q == OtbnStartStopSecureWipeComplete) ||
+  assign done_o = ((state_q == OtbnStartStopSecureWipeComplete && init_sec_wipe_done_q) ||
                    (stop && (state_q == OtbnStartStopStateUrndRefresh)));
 
   assign addr_cnt_d = addr_cnt_inc ? (addr_cnt_q + 5'd1) : 5'd0;
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
-      addr_cnt_q <= 5'd0;
-    end else
-      addr_cnt_q <= addr_cnt_d;
+      addr_cnt_q           <= 5'd0;
+      init_sec_wipe_done_q <= 1'b0;
+    end else begin
+      addr_cnt_q           <= addr_cnt_d;
+      init_sec_wipe_done_q <= init_sec_wipe_done_d;
+    end
   end
+
+  // Output the next state of the `init_sec_wipe_done` bit in order to match the timing of the
+  // `secure_wipe_done_o` signal, which also rises in the cycle this controller enters the
+  // `OtbnStartStopSecureWipeComplete` state.
+  assign init_sec_wipe_done_o = init_sec_wipe_done_d;
 
   assign sec_wipe_addr_o = addr_cnt_q;
 
-  // A check for spurious or dropped secure wipe requests. We only expect to start a secure wipe
-  // when running. Once we've started a secure wipe, the controller should not drop the request
-  // until we tell it we're done.
+  // A check for spurious or dropped secure wipe requests.
+  // We only expect to start a secure wipe when running.
   assign spurious_secure_wipe_req = secure_wipe_req_i & ~allow_secure_wipe;
-  assign dropped_secure_wipe_req  = expect_secure_wipe & ~secure_wipe_req_i;
+  // Once we've started a secure wipe, the controller should not drop the request until we tell it
+  // we're done. This does not apply for the *initial* secure wipe, though, which is controlled by
+  // this module rather than the controller.
+  assign dropped_secure_wipe_req  = expect_secure_wipe & init_sec_wipe_done_o & ~secure_wipe_req_i;
 
   // Delay the "glitch req/ack" error signal by a cycle. Otherwise, you end up with a combinatorial
   // loop through the escalation signal that our fatal_error_o causes otbn_core to pass to the

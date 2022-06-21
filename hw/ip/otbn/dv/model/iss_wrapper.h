@@ -43,8 +43,11 @@ class MirroredRegs {
   // trashed)
   bool wipe_start;
 
-  // Execution is stopped if status is either 0 (IDLE) or 0xff (LOCKED)
-  bool stopped() const { return status == 0 || status == 0xff; }
+  // Execution is stopped if status is 0 (IDLE), 0x10 (INIT_SEC_WIPE), or 0xff
+  // (LOCKED).
+  bool stopped() const {
+    return status == 0 || status == 0x10 || status == 0xff;
+  }
 };
 
 // An object wrapping the ISS subprocess.

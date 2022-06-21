@@ -64,6 +64,8 @@ module otbn_top_sim (
   assign keymgr_key.key[1] = sideload_key_shares[1];
   assign keymgr_key.valid  = 1'b1;
 
+  logic init_sec_wipe_done;
+
   otbn_core #(
     .ImemSizeByte ( ImemSizeByte ),
     .DmemSizeByte ( DmemSizeByte )
@@ -110,6 +112,8 @@ module otbn_top_sim (
     .dmem_sec_wipe_urnd_key_o    (                            ),
     .imem_sec_wipe_urnd_key_o    (                            ),
     .req_sec_wipe_urnd_keys_i    ( 1'b0                       ),
+
+    .init_sec_wipe_done_o        ( init_sec_wipe_done         ),
 
     .escalate_en_i               ( prim_mubi_pkg::MuBi4False  ),
 
@@ -186,7 +190,21 @@ module otbn_top_sim (
     bad_data_addr:        core_err_bits.bad_data_addr
   };
 
-  // Pulse otbn_start for 1 cycle immediately out of reset.
+  // Delay `init_sec_wipe_done` by one cycle.  We are using this signal to wait for the OTBN core to
+  // complete the initial secure wipe before we send it the start signal.  When the OTBN core is
+  // embedded in the `otbn` module, the `otbn` module does this when it gets a command *after* it
+  // has seen the `init_sec_wipe_done` signal.  We need to add this delay here too, otherwise the
+  // OTBN core would get the start signal too early.
+  logic init_sec_wipe_done_q;
+  always_ff @(posedge IO_CLK, negedge IO_RST_N) begin
+    if (!IO_RST_N) begin
+      init_sec_wipe_done_q <= 1'b0;
+    end else begin
+      init_sec_wipe_done_q <= init_sec_wipe_done;
+    end
+  end
+
+  // Pulse otbn_start for 1 cycle after the initial secure wipe is done.
   // Flop `done_o` from otbn_core to match up with model done signal.
   always @(posedge IO_CLK or negedge IO_RST_N) begin
     if (!IO_RST_N) begin
@@ -197,7 +215,7 @@ module otbn_top_sim (
       otbn_err_bits_r  <= '0;
       otbn_err_bits_rr <= '0;
     end else begin
-      if (!otbn_start_done) begin
+      if (!otbn_start_done && init_sec_wipe_done_q) begin
         otbn_start      <= 1'b1;
         otbn_start_done <= 1'b1;
       end else if (otbn_start) begin
@@ -344,6 +362,8 @@ module otbn_top_sim (
     .edn_urnd_i            ( urnd_rsp ),
     .edn_urnd_o            ( ),
     .edn_urnd_cdc_done_i   ( edn_urnd_data_valid ),
+
+    .init_sec_wipe_done_i  ( init_sec_wipe_done ),
 
     .otp_key_cdc_done_i    ( 1'b0 ),
 

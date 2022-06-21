@@ -71,6 +71,7 @@ package otbn_pkg;
     StatusBusyExecute     = 8'h01,
     StatusBusySecWipeDmem = 8'h02,
     StatusBusySecWipeImem = 8'h03,
+    StatusInitSecWipe     = 8'h10,
     StatusLocked          = 8'hFF
   } status_e;
 

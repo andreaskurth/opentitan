@@ -54,8 +54,9 @@ class otbn_scoreboard extends cip_base_scoreboard #(
   // set.
   bit pending_start_tl_trans = 1'b0;
 
-  // The mirrored STATUS register from the ISS.
-  bit [7:0] model_status = 8'd0;
+  // The mirrored STATUS register from the ISS. The initial value has to be kept in sync with the
+  // reset value of the STATUS register defined in `otbn.hjson`.
+  bit [7:0] model_status = otbn_pkg::StatusInitSecWipe;
 
   // The "locked" field is used to track whether OTBN is "locked". For most operational state
   // tracking, we go through the ISS, but OTBN can become locked without actually starting an
