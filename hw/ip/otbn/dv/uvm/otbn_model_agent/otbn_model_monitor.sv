@@ -34,16 +34,19 @@ class otbn_model_monitor extends dv_base_monitor #(
       // Wait until vif signals a change in status (or we are in reset)
       cfg.vif.wait_status();
 
-      if (cfg.vif.rst_ni === 1'b1) begin
-        // We aren't in reset, so we've just seen the done signal go high.
-        trans = otbn_model_item::type_id::create("trans");
-        trans.item_type = OtbnModelStatus;
-        trans.status    = cfg.vif.status;
-        trans.err       = cfg.vif.err;
-        trans.err_bits  = cfg.vif.err_bits;
-        trans.mnemonic  = "";
-        analysis_port.write(trans);
-      end else begin
+      trans = otbn_model_item::type_id::create("trans");
+      trans.item_type = OtbnModelStatus;
+      // If the status changes due to reset, there is a race between this process and the one
+      // driving `cfg.vif.status`.  To prevent `trans.status` from depending on which process is
+      // scheduled first, we set it to the reset value of the STATUS register.  This has to be
+      // kept in sync with `otbn.hjson`.
+      trans.status    = (cfg.vif.rst_ni !== 1'b1) ? otbn_pkg::StatusInitSecWipe : cfg.vif.status;
+      trans.err       = cfg.vif.err;
+      trans.err_bits  = cfg.vif.err_bits;
+      trans.mnemonic  = "";
+      analysis_port.write(trans);
+
+      if (cfg.vif.rst_ni !== 1'b1) begin
         // We are in reset. Wait until we aren't (we need to do this because wait_status() returns
         // immediately in reset)
         wait(cfg.vif.rst_ni);
