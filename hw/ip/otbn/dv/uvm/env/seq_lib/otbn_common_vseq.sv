@@ -58,6 +58,23 @@ class otbn_common_vseq extends otbn_base_vseq;
     `DV_ASSERT_CTRL_REQ("otbn_status_assert_en", 1'b1)
   endtask
 
+  // Overridden from dv_base_vseq. Wait for OTBN to be in Idle status, otherwise it ignores writes
+  // to some of its CSRs and the random read/write tests will fail for those CSRs.
+  task run_csr_vseq(string csr_test_type,
+                    int    num_test_csrs = 0,
+                    bit    do_rand_wr_and_reset = 1,
+                    dv_base_reg_block models[$] = {},
+                    string ral_name = "");
+    dv_base_reg status_reg = cfg.ral_models["otbn_reg_block"].get_dv_base_reg_by_name("status");
+    wait(cfg.model_agent_cfg.vif.status == otbn_pkg::StatusIdle);
+    // Update the mirrored value of OTBN's status register to Idle.  This is necessary because the
+    // register model does not know OTBN automatically transitions from the reset state to Idle as
+    // it completes the initial secure wipe.
+    status_reg.predict(0);
+    // Run actual CSR vseq.
+    super.run_csr_vseq(csr_test_type, num_test_csrs, do_rand_wr_and_reset, models, ral_name);
+  endtask
+
   // Overriden from cip_base_vseq. Initialise Imem and Dmem and then call the super function.
   task run_passthru_mem_tl_intg_err_vseq_sub(string ral_name);
     `uvm_info(`gfn, "Overriding run_passthru_mem_tl_intg_err_vseq_sub", UVM_HIGH)
