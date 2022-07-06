@@ -136,6 +136,8 @@ class OTBNState:
         # current fsm_state.
         self.cycles_in_this_state = 0
 
+        self.ext_regs.write('STATUS', Status.INIT_SEC_WIPE, True)
+
     def get_next_pc(self) -> int:
         if self._pc_next_override is not None:
             return self._pc_next_override
