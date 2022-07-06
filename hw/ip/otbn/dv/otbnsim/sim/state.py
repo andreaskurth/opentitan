@@ -184,6 +184,7 @@ class OTBNState:
         self._init_sec_wipe_state = InitSecWipeState.IN_PROGRESS
         # OTBN will request a new URND value, so the model has to do the same.
         self._urnd_client.request()
+        self.ext_regs.write('STATUS', Status.INIT_SEC_WIPE, True)
 
     def init_sec_wipe_is_running(self) -> bool:
         return self._init_sec_wipe_state == InitSecWipeState.IN_PROGRESS
