@@ -637,17 +637,18 @@ class SimCfg(FlowCfg):
             return fail_msgs
 
         deployed_items = self.deploy
-        runs = []
-        for run, result in run_results.items():
-            if isinstance(run, RunTest):
-                r = {'name': run.test_obj.name,
-                     'seed': run.seed,
-                     'index': run.index,
-                     'result': result,
-                }
-                runs.append(r)
-        with open('sim_results.json', 'w') as f:
-            json.dump(obj={'runs': runs}, fp=f, indent=2)
+        if self.args.export_results:
+            runs = []
+            for run, result in run_results.items():
+                if isinstance(run, RunTest):
+                    r = {'name': run.test_obj.name,
+                         'seed': run.seed,
+                         'index': run.index,
+                         'result': result,
+                    }
+                    runs.append(r)
+            with open(self.args.export_results, 'w') as f:
+                json.dump(obj={'runs': runs}, fp=f, indent=2)
 
         results = SimResults(deployed_items, run_results)
 

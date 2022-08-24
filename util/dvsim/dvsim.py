@@ -607,6 +607,12 @@ def parse_args():
                       action='store_true',
                       help="Publish results to reports.opentitan.org.")
 
+    pubg.add_argument("--export-results",
+                      metavar="<result-json-file>",
+                      action='store',
+                      help="""Export results to json file so they can be
+                              reproduced.""")
+
     dvg = parser.add_argument_group('Controlling DVSim itself')
 
     dvg.add_argument("--print-interval",
