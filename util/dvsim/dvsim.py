@@ -21,6 +21,7 @@ by the sim tool.
 
 import argparse
 import datetime
+import json
 import logging as log
 import os
 import random
@@ -327,6 +328,12 @@ def parse_args():
                              'the given configs from it. If this argument is '
                              'not used, dvsim will process all configs listed '
                              'in a primary config.'))
+
+    whatg.add_argument("--reproduce-results",
+                       metavar="<result-json-file>",
+                       action="store",
+                       help="""Load a result file and run the exact same
+                               test-seed combinations.""")
 
     disg = parser.add_argument_group('Dispatch options')
 
@@ -680,6 +687,20 @@ def main():
     curr_ts = datetime.datetime.utcnow()
     setattr(args, "timestamp_long", curr_ts.strftime(TS_FORMAT_LONG))
     setattr(args, "timestamp", curr_ts.strftime(TS_FORMAT))
+
+    if args.reproduce_results:
+        # Override items and seeds.
+        args.items = []
+        args.seeds = []
+        with open(args.reproduce_results, 'r') as f:
+            prev_results = json.load(f)
+            # Sort to retain index.
+            for r in sorted(prev_results['runs'],
+                            key=lambda r: (r['name'], r['index'])):
+                args.items.append(r['name'])
+                args.seeds.append(r['seed'])
+        # Override reseed factor as seeds are fixed.
+        args.reseed = 1
 
     # Register the seeds from command line with the RunTest class.
     RunTest.seeds = args.seeds
