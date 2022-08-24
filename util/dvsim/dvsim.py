@@ -335,6 +335,12 @@ def parse_args():
                        help="""Load a result file and run the exact same
                                test-seed combinations.""")
 
+    whatg.add_argument("--reproduce-failed-results",
+                       metavar="<result-json-file>",
+                       action="store",
+                       help="""Load a result file and run all test-seed
+                               combinations that had failed.""")
+
     disg = parser.add_argument_group('Dispatch options')
 
     disg.add_argument("--job-prefix",
@@ -688,15 +694,28 @@ def main():
     setattr(args, "timestamp_long", curr_ts.strftime(TS_FORMAT_LONG))
     setattr(args, "timestamp", curr_ts.strftime(TS_FORMAT))
 
-    if args.reproduce_results:
+    if args.reproduce_results and args.reproduce_failed_results:
+        log.fatal("'--reproduce-results' and '--reproduce-failed-results' "
+                  "are mutually exclusive.")
+        sys.exit(1)
+
+    if args.reproduce_results or args.reproduce_failed_results:
         # Override items and seeds.
         args.items = []
         args.seeds = []
-        with open(args.reproduce_results, 'r') as f:
-            prev_results = json.load(f)
-            # Sort to retain index.
-            for r in sorted(prev_results['runs'],
-                            key=lambda r: (r['name'], r['index'])):
+        if args.reproduce_results:
+            p = args.reproduce_results
+        else:
+            p = args.reproduce_failed_results
+        with open(p, 'r') as f:
+            prev_runs = json.load(f)['runs']
+            # Sort to preserve index.
+            runs = sorted(prev_runs, key=lambda r: (r['name'], r['index']))
+            if args.reproduce_failed_results:
+                log.warn("Run index is currently not preserved when using "
+                         "'--reproduce-failed-results'.")
+                runs = [r for r in runs if r['result'] in ['F', 'K']]
+            for r in runs:
                 args.items.append(r['name'])
                 args.seeds.append(r['seed'])
         # Override reseed factor as seeds are fixed.
