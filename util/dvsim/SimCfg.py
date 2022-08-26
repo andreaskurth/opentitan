@@ -21,7 +21,7 @@ from Modes import BuildModes, Modes, Regressions, RunModes, Tests
 from SimResults import SimResults
 from tabulate import tabulate
 from Testplan import Testplan
-from utils import VERBOSE, rm_path
+from utils import VERBOSE, list_extend_nondup, rm_path
 
 # This affects the bucketizer failure report.
 _MAX_UNIQUE_TESTS = 5
@@ -71,7 +71,7 @@ class SimCfg(FlowCfg):
         self.build_opts.extend(args.build_opts)
         self.en_build_modes = args.build_modes.copy()
         self.run_opts = []
-        self.run_opts.extend(args.run_opts)
+        list_extend_nondup(self.run_opts, args.run_opts)
         self.en_run_modes = []
         self.en_run_modes.extend(args.run_modes)
         self.build_unique = args.build_unique
@@ -278,7 +278,7 @@ class SimCfg(FlowCfg):
                 self.build_opts.extend(build_mode_obj.build_opts)
                 self.pre_run_cmds.extend(build_mode_obj.pre_run_cmds)
                 self.post_run_cmds.extend(build_mode_obj.post_run_cmds)
-                self.run_opts.extend(build_mode_obj.run_opts)
+                list_extend_nondup(self.run_opts, build_mode_obj.run_opts)
                 self.sw_images.extend(build_mode_obj.sw_images)
                 self.sw_build_opts.extend(build_mode_obj.sw_build_opts)
             else:
@@ -293,7 +293,7 @@ class SimCfg(FlowCfg):
             if run_mode_obj is not None:
                 self.pre_run_cmds.extend(run_mode_obj.pre_run_cmds)
                 self.post_run_cmds.extend(run_mode_obj.post_run_cmds)
-                self.run_opts.extend(run_mode_obj.run_opts)
+                list_extend_nondup(self.run_opts, run_mode_obj.run_opts)
                 self.sw_images.extend(run_mode_obj.sw_images)
                 self.sw_build_opts.extend(run_mode_obj.sw_build_opts)
             else:
@@ -426,19 +426,26 @@ class SimCfg(FlowCfg):
 
         build_map is a dictionary mapping a build mode to a CompileSim object.
         '''
-        tagged = []
+        tagged = {}
 
         for test in self.run_list:
             build_job = build_map[test.build_mode]
-            for idx in range(test.reseed):
-                tagged.append((idx, RunTest(idx, test, build_job, self)))
+            for _ in range(test.reseed):
+                if test not in tagged:
+                    tagged[test] = []
+                    idx = 0
+                else:
+                    idx = tagged[test][-1].index + 1
+                tagged[test].append(RunTest(idx, test, build_job, self))
 
-        # Stably sort the tagged list by the 1st coordinate.
-        tagged.sort(key=lambda x: x[0])
+        # Create a flat list from the dictionary of lists.
+        tagged = [v for _, vs in tagged.items() for v in vs]
 
-        # Return the sorted list of RunTest objects, discarding the indices by
-        # which we sorted it.
-        return [run for _, run in tagged]
+        # Stably sort the tagged list by the index.
+        tagged.sort(key=lambda test: test.index)
+
+        # Return the sorted list of RunTest objects.
+        return tagged
 
     def _create_deploy_objects(self):
         '''Create deploy objects from the build and run lists.

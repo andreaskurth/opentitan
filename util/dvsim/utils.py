@@ -646,3 +646,12 @@ def check_int(x):
     if not x.isdecimal():
         raise RuntimeError("{} is not a decimal number".format(x))
     return int(x)
+
+
+def list_extend_nondup(list_to_extend, additional_items):
+    """Extend list with items of another list that the first list does not
+       already contain.
+    """
+    for item in additional_items:
+        if item not in list_to_extend:
+            list_to_extend.append(item)

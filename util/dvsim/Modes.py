@@ -6,7 +6,7 @@ import logging as log
 import pprint
 import sys
 
-from utils import VERBOSE
+from utils import VERBOSE, list_extend_nondup
 
 
 class Modes():
@@ -427,7 +427,7 @@ class Tests(RunModes):
             # Merge build_mode's params with self
             test_obj.pre_run_cmds.extend(test_obj.build_mode.pre_run_cmds)
             test_obj.post_run_cmds.extend(test_obj.build_mode.post_run_cmds)
-            test_obj.run_opts.extend(test_obj.build_mode.run_opts)
+            list_extend_nondup(test_obj.run_opts, test_obj.build_mode.run_opts)
             test_obj.sw_images.extend(test_obj.build_mode.sw_images)
             test_obj.sw_build_opts.extend(test_obj.build_mode.sw_build_opts)
 
@@ -443,12 +443,14 @@ class Tests(RunModes):
         for test in tests:
             if test.build_mode.name not in processed_build_modes:
                 test.build_mode.pre_build_cmds.extend(global_pre_build_cmds)
-                test.build_mode.post_build_cmds.extend(global_post_build_cmds)
+                for opt in global_run_opts:
+                    if opt not in test.run_opts:
+                        test.run_opts.append(opt)
                 test.build_mode.build_opts.extend(global_build_opts)
                 processed_build_modes.add(test.build_mode.name)
             test.pre_run_cmds.extend(global_pre_run_cmds)
             test.post_run_cmds.extend(global_post_run_cmds)
-            test.run_opts.extend(global_run_opts)
+            list_extend_nondup(test.run_opts, global_run_opts)
             test.sw_images.extend(global_sw_images)
             test.sw_build_opts.extend(global_sw_build_opts)
 
@@ -572,7 +574,8 @@ class Regressions(Modes):
                 regression_obj.build_opts.extend(sim_mode_obj.build_opts)
                 regression_obj.pre_run_cmds.extend(sim_mode_obj.pre_run_cmds)
                 regression_obj.post_run_cmds.extend(sim_mode_obj.post_run_cmds)
-                regression_obj.run_opts.extend(sim_mode_obj.run_opts)
+                list_extend_nondup(regression_obj.run_opts,
+                                   sim_mode_obj.run_opts)
 
             # Unpack the run_modes
             # TODO: If there are other params other than run_opts throw an
@@ -627,7 +630,7 @@ class Regressions(Modes):
                 processed_build_modes.append(test.build_mode.name)
             test.pre_run_cmds.extend(self.pre_run_cmds)
             test.post_run_cmds.extend(self.post_run_cmds)
-            test.run_opts.extend(self.run_opts)
+            list_extend_nondup(test.run_opts, self.run_opts)
 
             # Override reseed if available.
             if self.reseed is not None:
