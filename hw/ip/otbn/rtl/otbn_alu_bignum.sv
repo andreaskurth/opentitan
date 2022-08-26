@@ -493,28 +493,29 @@ module otbn_alu_bignum
 
   assign adder_x_res = adder_x_op_a_blanked + adder_x_op_b_blanked;
 
-  // SEC_CM: DATA_REG_SW.SCA
-  prim_blanker #(.Width(WLEN)) u_adder_y_op_a_blanked (
-    .in_i (operation_i.operand_a),
-    .en_i (alu_predec_bignum_i.adder_y_op_a_en),
-    .out_o(adder_y_op_a_blanked)
-  );
-
   assign x_res_operand_a_mux_out =
-      alu_predec_bignum_i.x_res_operand_a_sel ? adder_x_res[WLEN:1] : adder_y_op_a_blanked;
+      alu_predec_bignum_i.x_res_operand_a_sel ? adder_x_res[WLEN:1] : operation_i.operand_a;
+
+  assign shift_mod_mux_out =
+      alu_predec_bignum_i.shift_mod_sel ? shifter_res : mod_no_intg_q;
 
   // SEC_CM: DATA_REG_SW.SCA
   prim_blanker #(.Width(WLEN)) u_adder_y_op_shifter_blanked (
-    .in_i (shifter_res),
+    .in_i (shift_mod_mux_out),
     .en_i (alu_predec_bignum_i.adder_y_op_shifter_en),
     .out_o(adder_y_op_shifter_res_blanked)
   );
 
-  assign shift_mod_mux_out =
-      alu_predec_bignum_i.shift_mod_sel ? adder_y_op_shifter_res_blanked : mod_no_intg_q;
+  // SEC_CM: DATA_REG_SW.SCA
+  prim_blanker #(.Width(WLEN)) u_adder_y_op_a_blanked (
+    .in_i (x_res_operand_a_mux_out),
+    .en_i (alu_predec_bignum_i.adder_y_op_a_en),
+    .out_o(adder_y_op_a_blanked)
+  );
 
-  assign adder_y_op_a = {x_res_operand_a_mux_out, 1'b1};
-  assign adder_y_op_b = {adder_y_op_b_invert ? ~shift_mod_mux_out : shift_mod_mux_out,
+  assign adder_y_op_a = {adder_y_op_a_blanked, 1'b1};
+  assign adder_y_op_b = {adder_y_op_b_invert ? ~adder_y_op_shifter_res_blanked :
+                                               adder_y_op_shifter_res_blanked,
                          adder_y_carry_in};
 
   assign adder_y_res = adder_y_op_a + adder_y_op_b;
