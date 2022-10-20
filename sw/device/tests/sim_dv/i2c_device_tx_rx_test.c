@@ -110,6 +110,7 @@ void check_addr(uint8_t addr, dif_i2c_id_t id0, dif_i2c_id_t id1) {
 }
 
 bool test_main(void) {
+  // LOG_INFO("Testing I2C index %d", kI2cIdx);
   if (kI2cByteCount > I2C_PARAM_FIFO_DEPTH - 4) {
     LOG_ERROR(
         "Test cannot fit %d bytes, 2 START records, and 2 STOP records in "
@@ -185,11 +186,14 @@ bool test_main(void) {
     expected_data[i] = rand_testutils_gen32_range(0, 0xff);
   };
 
+  // Write expected data to tx fifo.
   while (tx_empty_irq_seen == false) {
   }
   i2c_testutils_target_rd(&i2c, kI2cByteCount, expected_data);
   tx_empty_irq_seen = false;
 
+  LOG_INFO("Data written to fifo");
+  
   uint8_t tx_fifo_lvl, acq_fifo_lvl;
   do {
     CHECK_DIF_OK(
