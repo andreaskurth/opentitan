@@ -493,7 +493,7 @@ module aes_control
           add_state_in_sel_o  != mr_add_state_in_sel[i]  ||
           add_state_out_sel_o != mr_add_state_out_sel[i] ||
           key_init_sel_o      != mr_key_init_sel[i]      ||
-          iv_sel_o            != mr_iv_sel[i]) begin
+          iv_sel_o            != mr_iv_sel[i]) begin // only this and all-zero hit
         mr_err = 1'b1;
       end
     end

@@ -1013,13 +1013,13 @@ module aes_sbox_dom
   // Convert data to normal basis X.
   assign in_data_basis_x = (op_i == CIPH_FWD) ? aes_mvm(data_i, A2X)         :
                            (op_i == CIPH_INV) ? aes_mvm(data_i ^ 8'h63, S2X) :
-                                                aes_mvm(data_i, A2X);
+                                                aes_mvm(data_i, A2X); // this line not hit
 
   // Convert mask to normal basis X.
   // The addition of constant 8'h63 prior to the affine transformation is skipped.
   assign in_mask_basis_x = (op_i == CIPH_FWD) ? aes_mvm(mask_i, A2X) :
                            (op_i == CIPH_INV) ? aes_mvm(mask_i, S2X) :
-                                                aes_mvm(mask_i, A2X);
+                                                aes_mvm(mask_i, A2X); // this line not hit
 
   // Do the inversion in normal basis X.
   aes_dom_inverse_gf2p8 #(
@@ -1039,13 +1039,13 @@ module aes_sbox_dom
   // Convert data to basis S or A.
   assign data_o = (op_i == CIPH_FWD) ? (aes_mvm(out_data_basis_x, X2S) ^ 8'h63) :
                   (op_i == CIPH_INV) ? (aes_mvm(out_data_basis_x, X2A))         :
-                                       (aes_mvm(out_data_basis_x, X2S) ^ 8'h63);
+                                       (aes_mvm(out_data_basis_x, X2S) ^ 8'h63); // this line not hit
 
   // Convert mask to basis S or A.
   // The addition of constant 8'h63 following the affine transformation is skipped.
   assign mask_o = (op_i == CIPH_FWD) ? aes_mvm(out_mask_basis_x, X2S) :
                   (op_i == CIPH_INV) ? aes_mvm(out_mask_basis_x, X2A) :
-                                       aes_mvm(out_mask_basis_x, X2S);
+                                       aes_mvm(out_mask_basis_x, X2S); // this line not hit
 
   // Counter register
   logic [2:0] count_d, count_q;

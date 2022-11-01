@@ -477,10 +477,10 @@ module aes_cipher_core import aes_pkg::*;
     always_comb begin : key_words_mux
       unique case (key_words_sel)
         KEY_WORDS_0123: key_words[s] = key_full_q[s][3:0];
-        KEY_WORDS_2345: key_words[s] = AES192Enable ? key_full_q[s][5:2] : '0;
+        KEY_WORDS_2345: key_words[s] = AES192Enable ? key_full_q[s][5:2] : '0; // weird
         KEY_WORDS_4567: key_words[s] = key_full_q[s][7:4];
         KEY_WORDS_ZERO: key_words[s] = '0;
-        default:        key_words[s] = '0;
+        default:        key_words[s] = '0; // not hit
       endcase
     end
 

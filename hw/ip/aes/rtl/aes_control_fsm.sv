@@ -366,7 +366,7 @@ module aes_control_fsm
 
           // Updates to the control register are only allowed if the core is not about to start and
           // there isn't a storage error. A storage error is unrecoverable and requires a reset.
-          ctrl_we_o      = !ctrl_err_storage_i ? ctrl_qe_i : 1'b0;
+          ctrl_we_o      = !ctrl_err_storage_i ? ctrl_qe_i : 1'b0; // 1 ? - not hit
 
           // Control register updates clear all register status trackers.
           key_init_clear = ctrl_we_o;
@@ -480,7 +480,7 @@ module aes_control_fsm
           if (cipher_crypt_i) begin
             aes_ctrl_ns = FINISH;
 
-          end else if (key_iv_data_in_clear_i || data_out_clear_i) begin
+          end else if (key_iv_data_in_clear_i || data_out_clear_i) begin // 0 | 0 not hit
             // To clear the output data registers, we re-use the muxing resources of the cipher
             // core. To clear all key material, some key registers inside the cipher core need to
             // be cleared.
@@ -540,11 +540,11 @@ module aes_control_fsm
           // let data propagate in case of mux selector or sparsely encoded signals taking on
           // invalid values.
           cipher_out_ready_o = finish;
-          cipher_out_done    = finish & cipher_out_valid_i &
+          cipher_out_done    = finish & cipher_out_valid_i & // 1 & 1 & 0 & 0 & 1 not hit (and two others)
               ~mux_sel_err_i & ~sp_enc_err_i & ~cipher_op_err;
 
           // Signal if the cipher core is stalled (because previous output has not yet been read).
-          stall    = ~finish & cipher_out_valid_i;
+          stall    = ~finish & cipher_out_valid_i; // 0 & 1 not hit -> should go away with more seeds
           stall_we = 1'b1;
 
           // State out addition mux control
@@ -629,7 +629,7 @@ module aes_control_fsm
           if (cipher_data_out_clear_i) begin
             // Clear output data and the trigger bit. Don't release data from cipher core in case
             // of mux selector or sparsely encoded signals taking on invalid values.
-            data_out_we_o     = ~mux_sel_err_i & ~sp_enc_err_i & ~cipher_op_err;
+            data_out_we_o     = ~mux_sel_err_i & ~sp_enc_err_i & ~cipher_op_err; // output 0 never hit -> should go away with more seeds
             data_out_clear_we = 1'b1;
           end
 
@@ -653,7 +653,7 @@ module aes_control_fsm
 
     // Unconditionally jump into the terminal error state in case a mux selector or a sparsely
     // encoded signal becomes invalid, or if the life cycle controller triggers an escalation.
-    if (mux_sel_err_i || sp_enc_err_i || cipher_op_err ||
+    if (mux_sel_err_i || sp_enc_err_i || cipher_op_err || // 0 | 0 | 1 | - and 0 | 0 | 0 | 1 not hit
             lc_escalate_en_i != lc_ctrl_pkg::Off) begin
       aes_ctrl_ns = ERROR;
     end

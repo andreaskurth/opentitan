@@ -21,11 +21,11 @@ module aes_shift_rows (
   // Row 1
   assign data_o[1] = (op_i == CIPH_FWD) ? aes_circ_byte_shift(data_i[1], 2'h3) :
                      (op_i == CIPH_INV) ? aes_circ_byte_shift(data_i[1], 2'h1) :
-                                          aes_circ_byte_shift(data_i[1], 2'h3);
+                                          aes_circ_byte_shift(data_i[1], 2'h3); // this line not hit
 
   // Row 3
   assign data_o[3] = (op_i == CIPH_FWD) ? aes_circ_byte_shift(data_i[3], 2'h1) :
                      (op_i == CIPH_INV) ? aes_circ_byte_shift(data_i[3], 2'h3) :
-                                          aes_circ_byte_shift(data_i[3], 2'h1);
+                                          aes_circ_byte_shift(data_i[3], 2'h1); // this line not hit
 
 endmodule

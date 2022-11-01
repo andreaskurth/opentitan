@@ -391,9 +391,9 @@ module aes_core
 
   // Cipher core operation
   assign cipher_op = (aes_mode_q == AES_ECB && aes_op_q == AES_ENC) ? CIPH_FWD :
-                     (aes_mode_q == AES_ECB && aes_op_q == AES_DEC) ? CIPH_INV :
+                     (aes_mode_q == AES_ECB && aes_op_q == AES_DEC) ? CIPH_INV : // not hit
                      (aes_mode_q == AES_CBC && aes_op_q == AES_ENC) ? CIPH_FWD :
-                     (aes_mode_q == AES_CBC && aes_op_q == AES_DEC) ? CIPH_INV :
+                     (aes_mode_q == AES_CBC && aes_op_q == AES_DEC) ? CIPH_INV : // not hit
                      (aes_mode_q == AES_CFB)                        ? CIPH_FWD :
                      (aes_mode_q == AES_OFB)                        ? CIPH_FWD :
                      (aes_mode_q == AES_CTR)                        ? CIPH_FWD : CIPH_FWD;

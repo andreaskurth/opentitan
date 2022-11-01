@@ -330,7 +330,7 @@ module aes_cipher_control import aes_pkg::*;
           key_dec_sel_o   != mr_key_dec_sel[i]   ||
           key_words_sel_o != mr_key_words_sel[i] ||
           round_key_sel_o != mr_round_key_sel[i]) begin
-        mr_err = 1'b1;
+        mr_err = 1'b1; // not hit
       end
     end
   end
@@ -347,7 +347,7 @@ module aes_cipher_control import aes_pkg::*;
       rnd_ctr |= mr_rnd_ctr[i];
 
       if (rnd_ctr != mr_rnd_ctr[i]) begin
-        rnd_ctr_err = 1'b1;
+        rnd_ctr_err = 1'b1; // not hit
       end
     end
   end

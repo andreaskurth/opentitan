@@ -31,7 +31,7 @@ module aes_reg_status #(
   // Collect write operations. Upon clear or use, we start over. If armed, the next write will
   // restart the tracking.
   assign we_d    = (clear_i || use_i) ? '0   :
-                   (armed_q && |we_i) ? we_i : (we_q | we_i);
+                   (armed_q && |we_i) ? we_i : (we_q | we_i); // 1 & 1 not hit
   assign armed_d = (clear_i || use_i) ? 1'b0 :
                    (armed_q && |we_i) ? 1'b0 : armed_q | arm_i;
 

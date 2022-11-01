@@ -115,7 +115,7 @@ module aes_ctr_fsm import aes_pkg::*;
     endcase
 
     // Unconditionally jump into the terminal error state in case an error is detected.
-    if (incr_err_i || mr_err_i) begin
+    if (incr_err_i || mr_err_i) begin // first term fully UNR
       aes_ctr_ns = ERROR;
     end
   end

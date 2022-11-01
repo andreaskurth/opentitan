@@ -226,7 +226,7 @@ module aes_cipher_control_fsm import aes_pkg::*;
             key_full_sel_o = dec_key_gen_i ? KEY_FULL_ENC_INIT :
                         (op_i == CIPH_FWD) ? KEY_FULL_ENC_INIT :
                         (op_i == CIPH_INV) ? KEY_FULL_DEC_INIT :
-                                             KEY_FULL_ENC_INIT;
+                                             KEY_FULL_ENC_INIT; // not hit
             key_full_we_o  = 1'b1;
 
             // Load num_rounds, initialize round counter.
@@ -254,7 +254,7 @@ module aes_cipher_control_fsm import aes_pkg::*;
             (key_len_i == AES_192 && op_i == CIPH_FWD) ? KEY_WORDS_0123 :
             (key_len_i == AES_192 && op_i == CIPH_INV) ? KEY_WORDS_2345 :
             (key_len_i == AES_256 && op_i == CIPH_FWD) ? KEY_WORDS_0123 :
-            (key_len_i == AES_256 && op_i == CIPH_INV) ? KEY_WORDS_4567 : KEY_WORDS_ZERO;
+            (key_len_i == AES_256 && op_i == CIPH_INV) ? KEY_WORDS_4567 : KEY_WORDS_ZERO; // last term not hit
 
         // Clear masking PRNG reseed status.
         prng_reseed_done_d = 1'b0;
@@ -267,7 +267,7 @@ module aes_cipher_control_fsm import aes_pkg::*;
           // only in the first clock cycle. By requesting the PRNG update in any clock cycle
           // other than the last one, the PRD fed into the DOM S-Boxes is guaranteed to be stable.
           // This is better in terms of SCA resistance. Request the PRNG update in the first cycle.
-          advance         = key_expand_out_req_i & cyc_ctr_expr;
+          advance         = key_expand_out_req_i & cyc_ctr_expr; // 1 & 0 not hit
           prng_update_o   = (SecSBoxImpl == SBoxImplDom) ? cyc_ctr_q == 3'd0 : SecMasking;
           key_expand_en_o = 1'b1;
           if (advance) begin
@@ -295,14 +295,14 @@ module aes_cipher_control_fsm import aes_pkg::*;
             (key_len_i == AES_192 && op_i == CIPH_FWD) ? KEY_WORDS_2345 :
             (key_len_i == AES_192 && op_i == CIPH_INV) ? KEY_WORDS_0123 :
             (key_len_i == AES_256 && op_i == CIPH_FWD) ? KEY_WORDS_4567 :
-            (key_len_i == AES_256 && op_i == CIPH_INV) ? KEY_WORDS_0123 : KEY_WORDS_ZERO;
+            (key_len_i == AES_256 && op_i == CIPH_INV) ? KEY_WORDS_0123 : KEY_WORDS_ZERO; // last term not hit
 
         // Keep requesting PRNG reseeding until it is acknowledged.
         prng_reseed_req_o = SecMasking & prng_reseed_q_i & ~prng_reseed_done_q;
 
         // Select round key: direct or mixed (equivalent inverse cipher)
         round_key_sel_o = (op_i == CIPH_FWD) ? ROUND_KEY_DIRECT :
-                          (op_i == CIPH_INV) ? ROUND_KEY_MIXED  : ROUND_KEY_DIRECT;
+                          (op_i == CIPH_INV) ? ROUND_KEY_MIXED  : ROUND_KEY_DIRECT; // last term not hit
 
         // Advance in sync with SubBytes and KeyExpand. Based on the S-Box implementation, both can
         // take multiple cycles to finish. Wait for handshake. The DOM S-Boxes consume fresh PRD
@@ -338,7 +338,7 @@ module aes_cipher_control_fsm import aes_pkg::*;
               // If we don't get the handshake now, we will wait in the finish state. When using
               // masking, we only finish if the masking PRNG has been reseeded.
               out_valid_o = SecMasking ? (prng_reseed_q_i ? prng_reseed_done_q : 1'b1) : 1'b1;
-              if (out_valid_o && out_ready_i) begin
+              if (out_valid_o && out_ready_i) begin // 1 & 0 not hit -> should be covered by FI test
                 // Go to idle state directly.
                 dec_key_gen_d_o    = 1'b0;
                 prng_reseed_d_o    = 1'b0;
@@ -358,7 +358,7 @@ module aes_cipher_control_fsm import aes_pkg::*;
             (key_len_i == AES_192 && op_i == CIPH_FWD) ? KEY_WORDS_2345 :
             (key_len_i == AES_192 && op_i == CIPH_INV) ? KEY_WORDS_0123 :
             (key_len_i == AES_256 && op_i == CIPH_FWD) ? KEY_WORDS_4567 :
-            (key_len_i == AES_256 && op_i == CIPH_INV) ? KEY_WORDS_0123 : KEY_WORDS_ZERO;
+            (key_len_i == AES_256 && op_i == CIPH_INV) ? KEY_WORDS_0123 : KEY_WORDS_ZERO; // last term not hit
 
         // Skip mix_columns
         add_rk_sel_o = ADD_RK_FINAL;
@@ -379,9 +379,9 @@ module aes_cipher_control_fsm import aes_pkg::*;
         // - all mux selector signals are valid (don't release data in case of errors), and
         // - all sparsely encoded signals are valid (don't release data in case of errors).
         // Perform both handshakes simultaneously.
-        advance        = (sub_bytes_out_req_i & cyc_ctr_expr) | dec_key_gen_q_i;
+        advance        = (sub_bytes_out_req_i & cyc_ctr_expr) | dec_key_gen_q_i; // (1 & 0) | 1 not hit
         sub_bytes_en_o = ~dec_key_gen_q_i;
-        out_valid_o    = (mux_sel_err_i || sp_enc_err_i || op_err_i) ? 1'b0         :
+        out_valid_o    = (mux_sel_err_i || sp_enc_err_i || op_err_i) ? 1'b0         : // 0 | 0 | 1, 0 | 1 | -, 1 | - | - not hit -> should go away with more seeds (or maybe inject faults while busy)
             SecMasking ? (prng_reseed_q_i ? prng_reseed_done_q & advance : advance) : advance;
 
         // Stop updating the cycle counter once we have valid output.
@@ -397,7 +397,7 @@ module aes_cipher_control_fsm import aes_pkg::*;
         prng_update_o =
             (SecSBoxImpl == SBoxImplDom) ? cyc_ctr_q == 3'd0 : out_valid_o & out_ready_i;
 
-        if (out_valid_o && out_ready_i) begin
+        if (out_valid_o && out_ready_i) begin // 1 & 0 not hit
           sub_bytes_out_ack_o = ~dec_key_gen_q_i;
 
           // Clear the state.
@@ -418,7 +418,7 @@ module aes_cipher_control_fsm import aes_pkg::*;
 
         // Once we're done, wait for handshake.
         out_valid_o = prng_reseed_done_q;
-        if (out_valid_o && out_ready_i) begin
+        if (out_valid_o && out_ready_i) begin // 1 & 0 not hit
           prng_reseed_d_o    = 1'b0;
           aes_cipher_ctrl_ns = IDLE;
         end
@@ -471,7 +471,7 @@ module aes_cipher_control_fsm import aes_pkg::*;
     // Unconditionally jump into the terminal error state in case a mux selector or a sparsely
     // encoded signal becomes invalid, in case we have detected a fault in the round counter,
     // or if a fatal alert has been triggered.
-    if (mux_sel_err_i || sp_enc_err_i || rnd_ctr_err_i || op_err_i || alert_fatal_i) begin
+    if (mux_sel_err_i || sp_enc_err_i || rnd_ctr_err_i || op_err_i || alert_fatal_i) begin // 1 | --, 0 | 0 | 1 | --, 0 | 0 | 0 | 1 | - not hit
       aes_cipher_ctrl_ns = ERROR;
     end
   end

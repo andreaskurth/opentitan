@@ -70,7 +70,7 @@ module aes_key_expand import aes_pkg::*;
       rnd_type[1] = (rnd == 1 || rnd == 4 || rnd == 7 || rnd == 10);
       rnd_type[2] = (rnd == 2 || rnd == 5 || rnd == 8 || rnd == 11);
       rnd_type[3] = (rnd == 3 || rnd == 6 || rnd == 9 || rnd == 12);
-    end else begin
+    end else begin // not hit
       rnd_type = '0;
     end
   end
@@ -86,7 +86,7 @@ module aes_key_expand import aes_pkg::*;
   always_comb begin : rcon_usage
     use_rcon = 1'b1;
 
-    if (AES192Enable) begin
+    if (AES192Enable) begin // check HTML file; also implicit else not hit
       if (key_len_i == AES_192 &&
           ((op_i == CIPH_FWD &&  rnd_type[1]) ||
            (op_i == CIPH_INV && (rnd_type[0] || rnd_type[3])))) begin
@@ -107,10 +107,10 @@ module aes_key_expand import aes_pkg::*;
       rcon_d = (op_i == CIPH_FWD)                            ? 8'h01 :
               ((op_i == CIPH_INV) && (key_len_i == AES_128)) ? 8'h36 :
               ((op_i == CIPH_INV) && (key_len_i == AES_192)) ? 8'h80 :
-              ((op_i == CIPH_INV) && (key_len_i == AES_256)) ? 8'h40 : 8'h01;
+              ((op_i == CIPH_INV) && (key_len_i == AES_256)) ? 8'h40 : 8'h01; // last else not hit
     end else begin
       rcon_d = (op_i == CIPH_FWD) ? aes_mul2(rcon_q) :
-               (op_i == CIPH_INV) ? aes_div2(rcon_q) : 8'h01;
+               (op_i == CIPH_INV) ? aes_div2(rcon_q) : 8'h01; // last else not hit
     end
   end
 
