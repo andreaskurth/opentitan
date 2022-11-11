@@ -42,8 +42,9 @@ class entropy_src_fw_ov_test extends entropy_src_base_test;
     cfg.dut_cfg.route_software_pct          = 50;
     cfg.otp_en_es_fw_read_pct               = 50;
     cfg.otp_en_es_fw_read_inval_pct         = 25;
-    // Always allow FW override for this test
-    cfg.otp_en_es_fw_over_pct               = 100;
+    // Mostly allow FW override for this test
+    cfg.otp_en_es_fw_over_pct               = 80;
+    cfg.otp_en_es_fw_over_inval_pct         = 10;
 
     cfg.dut_cfg.ht_threshold_scope_pct      = 50;
     cfg.dut_cfg.default_ht_thresholds_pct   = 0;

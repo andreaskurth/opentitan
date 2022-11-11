@@ -23,6 +23,12 @@ class entropy_src_smoke_test extends entropy_src_base_test;
     // not expect HT failures.
     cfg.dut_cfg.default_ht_thresholds_pct   = 100;
 
+    // Disable non-true otp_en_entropy_src_fw_{read,over} inputs, which this test does not expect.
+    cfg.otp_en_es_fw_read_pct          = 100;
+    cfg.otp_en_es_fw_read_inval_pct    = 0;
+    cfg.otp_en_es_fw_over_pct          = 100;
+    cfg.otp_en_es_fw_over_inval_pct    = 0;
+
     `DV_CHECK_RANDOMIZE_FATAL(cfg)
 
     `uvm_info(`gfn, $sformatf("%s", cfg.convert2string()), UVM_LOW)

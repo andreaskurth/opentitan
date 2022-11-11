@@ -51,6 +51,7 @@ class entropy_src_rng_test extends entropy_src_base_test;
     cfg.dut_cfg.entropy_data_reg_enable_pct = 50;
     cfg.dut_cfg.route_software_pct          = 50;
     cfg.otp_en_es_fw_read_pct               = 50;
+    cfg.otp_en_es_fw_read_inval_pct         = 25;
     cfg.otp_en_es_fw_over_pct               = 50;
     cfg.otp_en_es_fw_over_inval_pct         = 25;
 
