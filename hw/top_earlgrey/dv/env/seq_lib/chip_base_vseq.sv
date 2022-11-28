@@ -174,19 +174,15 @@ class chip_base_vseq #(
     // operation as "part of reset".
     // Same for the test that uses jtag to access CSRs. We need to wait until rom check is done.
     //
-    // Once the base class reset is finished, we're just after a chip reset. In a second, rom_ctrl
-    // is going to start asking KMAC to do an operation. At that point, KMAC's CFG_REGWEN register
-    // will go low. When the operation is finished, it will go high again. Wait until then.
+    // This function is meant to be called once the base class reset is finished.
+    // Use backdoor, so that this task can be used with or without stub mode enabled.
 
-    `uvm_info(`gfn, "waiting for rom_ctrl after reset", UVM_MEDIUM)
-    // Use backdoor, so that this task can be used with or without stub mode enabled
-    csr_spinwait(.ptr(ral.kmac.cfg_regwen), .exp_data(0), .backdoor(1), .spinwait_delay_ns(1000));
-    `uvm_info(`gfn, "rom_ctrl check started", UVM_MEDIUM)
-    csr_spinwait(.ptr(ral.kmac.cfg_regwen), .exp_data(1), .backdoor(1), .spinwait_delay_ns(1000));
-    `uvm_info(`gfn, "rom_ctrl check done after reset", UVM_HIGH)
+    csr_spinwait(.ptr(ral.rom_ctrl_regs.digest[0]), .exp_data(0), .compare_op(CompareOpNe),
+                 .backdoor(1), .spinwait_delay_ns(1000));
+    `uvm_info(`gfn, "rom_ctrl check done after reset", UVM_MEDIUM)
     csr_spinwait(.ptr(ral.lc_ctrl.status.ready), .exp_data(1), .backdoor(1),
                  .spinwait_delay_ns(1000));
-    `uvm_info(`gfn, "lc_ctrl has been initialized", UVM_HIGH)
+    `uvm_info(`gfn, "lc_ctrl has been initialized", UVM_MEDIUM)
   endtask
 
   virtual task pre_start();
@@ -199,6 +195,7 @@ class chip_base_vseq #(
     // Randomize the ROM image with valid ECC and digest. Subclasses that have an actual ROM image
     // will load a "real" ROM image later. If the ROM integrity check is disabled, no digest needs
     // to be calculated and we can just randomize the memory.
+    `uvm_info(`gfn, "Randomizing ROM in pre_start()", UVM_MEDIUM)
     `ifdef DISABLE_ROM_INTEGRITY_CHECK
       cfg.mem_bkdr_util_h[Rom].randomize_mem();
     `else
@@ -307,6 +304,7 @@ class chip_base_vseq #(
       end else begin  // if (mem.get_access() == "RW")
         // deposit random data to rom
         int byte_addr = offset * 4;
+        `uvm_info(`gfn, "ROM encrypt write32", UVM_MEDIUM)
         cfg.mem_bkdr_util_h[Rom].rom_encrypt_write32_integ(
             .addr(byte_addr), .data(wdata), .key(RndCnstRomCtrlScrKey),
             .nonce(RndCnstRomCtrlScrNonce), .scramble_data(1));

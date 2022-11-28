@@ -82,6 +82,7 @@ class chip_sw_rom_ctrl_integrity_check_vseq extends chip_sw_base_vseq;
     nonce = top_earlgrey_rnd_cnst_pkg::RndCnstRomCtrlScrNonce;
     key = top_earlgrey_rnd_cnst_pkg::RndCnstRomCtrlScrKey;
     data = cfg.mem_bkdr_util_h[Rom].rom_encrypt_read32(addr, key, nonce, 0) ^ flip_bit;
+    `uvm_info(`gfn, "ROM encrypt write32", UVM_MEDIUM)
     cfg.mem_bkdr_util_h[Rom].rom_encrypt_write32_integ(addr, data, key, nonce, 0);
   endfunction
 

@@ -92,6 +92,7 @@ class cip_base_vseq #(
   `include "cip_base_vseq__sec_cm_fi.svh"
 
   virtual task post_apply_reset(string reset_kind = "HARD");
+    `uvm_info(`gfn, "post_apply_reset() started", UVM_MEDIUM)
     super.post_apply_reset(reset_kind);
 
     // Wait for alert init done, then start the sequence.
@@ -102,6 +103,7 @@ class cip_base_vseq #(
     end
 
     if (en_auto_alerts_response && cfg.list_of_alerts.size()) run_alert_rsp_seq_nonblocking();
+    `uvm_info(`gfn, "post_apply_reset() done", UVM_MEDIUM)
   endtask
 
   function void pre_randomize();
@@ -159,12 +161,14 @@ class cip_base_vseq #(
   endtask
 
   virtual task apply_resets_concurrently(int reset_duration_ps = 0);
+    `uvm_info(`gfn, "apply_resets_concurrently() started", UVM_MEDIUM)
     if (cfg.num_edn) begin
       cfg.edn_clk_rst_vif.drive_rst_pin(0);
       reset_duration_ps = max2(reset_duration_ps, cfg.edn_clk_rst_vif.clk_period_ps);
     end
     super.apply_resets_concurrently(reset_duration_ps);
     if (cfg.num_edn) cfg.edn_clk_rst_vif.drive_rst_pin(1);
+    `uvm_info(`gfn, "apply_resets_concurrently() done", UVM_MEDIUM)
   endtask
 
   // tl_access task: does a single BUS_DW-bit write or read transaction to the specified address

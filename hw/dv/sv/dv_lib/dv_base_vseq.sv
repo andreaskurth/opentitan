@@ -123,6 +123,7 @@ class dv_base_vseq #(type RAL_T               = dv_base_reg_block,
 
     // Has one or more RAL models in DUT.
     if (cfg.clk_rst_vifs.size() > 0) begin
+      `uvm_info(`gfn, "Resetting with RAL models", UVM_MEDIUM)
       foreach (cfg.clk_rst_vifs[i]) begin
         cfg.clk_rst_vifs[i].drive_rst_pin(0);
         reset_duration_ps = max2(reset_duration_ps, cfg.clk_rst_vifs[i].clk_period_ps);
@@ -132,11 +133,14 @@ class dv_base_vseq #(type RAL_T               = dv_base_reg_block,
 
     // No RAL model and only has default clk_rst_vif.
     end else begin
+      `uvm_info(`gfn, "Resetting without RAL models", UVM_MEDIUM)
       cfg.clk_rst_vif.drive_rst_pin(0);
       reset_duration_ps = max2(reset_duration_ps, cfg.clk_rst_vif.clk_period_ps);
       #(reset_duration_ps * $urandom_range(2, 10) * 1ps);
       cfg.clk_rst_vif.drive_rst_pin(1);
     end
+
+    `uvm_info(`gfn, "apply_resets_concurrently() done", UVM_MEDIUM)
   endtask
 
   // This is called after apply_reset in this class and after apply_resets_concurrently

@@ -45,6 +45,7 @@ class chip_stub_cpu_base_vseq extends chip_base_vseq;
   endtask
 
   virtual task post_apply_reset(string reset_kind = "HARD");
+    `uvm_info(`gfn, "post_apply_reset() started", UVM_MEDIUM)
     super.post_apply_reset(reset_kind);
     // Wait until rom_ctrl and lc_ctrl have finished to ensure stub_cpu
     // does not conflict with any background power-up activity

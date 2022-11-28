@@ -608,7 +608,7 @@ interface chip_if;
   // Internal probes / monitors.
 
   wire sys_clk = `CLKMGR_HIER.clocks_o.clk_main_powerup;
-  wire sys_rst_n = `RSTMGR_HIER.resets_o.rst_sys_n[0];
+  wire sys_rst_n = `RSTMGR_HIER.resets_o.rst_sys_n[1];
   clk_rst_if sys_clk_rst_if(.clk(sys_clk), .rst_n(sys_rst_n));
 
   wire cpu_clk = `CPU_HIER.clk_i;
