@@ -18,6 +18,7 @@ Original Author: Shay Gal-on
 #include "coremark.h"
 #include "third_party/coremark/top_earlgrey/core_portme.h"
 
+#include "sw/device/lib/base/csr.h"
 #include "sw/device/lib/dif/dif_uart.h"
 #include "sw/device/lib/runtime/print.h"
 #include "sw/device/lib/testing/test_framework/check.h"
@@ -72,6 +73,17 @@ barebones_clock()
 
 /** Define Host specific (POSIX), or target specific global time variables. */
 static CORETIMETYPE start_time_val, stop_time_val;
+static ee_u32 start_num_instr_ret, stop_num_instr_ret,
+              start_num_cycles_lsu, stop_num_cycles_lsu,
+              start_num_cycles_if, stop_num_cycles_if,
+              start_num_loads, stop_num_loads,
+              start_num_stores, stop_num_stores,
+              start_num_jumps, stop_num_jumps,
+              start_num_branches, stop_num_branches,
+              start_num_branches_taken, stop_num_branches_taken,
+              start_num_instr_ret_c, stop_num_instr_ret_c,
+              start_num_cycles_mul_wait, stop_num_cycles_mul_wait,
+              start_num_cycles_div_wait, stop_num_cycles_div_wait;
 
 /* Function : start_time
         This function will be called right before starting the timed portion of
@@ -84,7 +96,27 @@ static CORETIMETYPE start_time_val, stop_time_val;
 void
 start_time(void)
 {
+    // Inhibit all performance counters before reading out their values prior to
+    // benchmarking.
+    CSR_WRITE(CSR_REG_MCOUNTINHIBIT, 0xffffffff);
+
+    // Save start value of all performance counters.
+    // TODO: extend to 64 bit
+    CSR_READ(CSR_REG_MINSTRET, &start_num_instr_ret);
+    CSR_READ(CSR_REG_MHPMCOUNTER3, &start_num_cycles_lsu);
+    CSR_READ(CSR_REG_MHPMCOUNTER4, &start_num_cycles_if);
+    CSR_READ(CSR_REG_MHPMCOUNTER5, &start_num_loads);
+    CSR_READ(CSR_REG_MHPMCOUNTER6, &start_num_stores);
+    CSR_READ(CSR_REG_MHPMCOUNTER7, &start_num_jumps);
+    CSR_READ(CSR_REG_MHPMCOUNTER8, &start_num_branches);
+    CSR_READ(CSR_REG_MHPMCOUNTER9, &start_num_branches_taken);
+    CSR_READ(CSR_REG_MHPMCOUNTER10, &start_num_instr_ret_c);
+    CSR_READ(CSR_REG_MHPMCOUNTER11, &start_num_cycles_mul_wait);
+    CSR_READ(CSR_REG_MHPMCOUNTER12, &start_num_cycles_div_wait);
     GETMYTIME(&start_time_val);
+
+    // Uninhibit all performance counters.
+    CSR_WRITE(CSR_REG_MCOUNTINHIBIT, 0);
 }
 /* Function : stop_time
         This function will be called right after ending the timed portion of the
@@ -97,7 +129,25 @@ start_time(void)
 void
 stop_time(void)
 {
+    // Inhibit all performance counters.
+    CSR_WRITE(CSR_REG_MCOUNTINHIBIT, 0xffffffff);
+
+    // Save stop value of all performance counters.
+    // TODO: extend to 64 bit
+    CSR_READ(CSR_REG_MINSTRET, &stop_num_instr_ret);
+    CSR_READ(CSR_REG_MHPMCOUNTER3, &stop_num_cycles_lsu);
+    CSR_READ(CSR_REG_MHPMCOUNTER4, &stop_num_cycles_if);
+    CSR_READ(CSR_REG_MHPMCOUNTER5, &stop_num_loads);
+    CSR_READ(CSR_REG_MHPMCOUNTER6, &stop_num_stores);
+    CSR_READ(CSR_REG_MHPMCOUNTER7, &stop_num_jumps);
+    CSR_READ(CSR_REG_MHPMCOUNTER8, &stop_num_branches);
+    CSR_READ(CSR_REG_MHPMCOUNTER9, &stop_num_branches_taken);
+    CSR_READ(CSR_REG_MHPMCOUNTER10, &stop_num_instr_ret_c);
+    CSR_READ(CSR_REG_MHPMCOUNTER11, &stop_num_cycles_mul_wait);
+    CSR_READ(CSR_REG_MHPMCOUNTER12, &stop_num_cycles_div_wait);
     GETMYTIME(&stop_time_val);
+
+    CSR_WRITE(CSR_REG_MCOUNTINHIBIT, 0);
 }
 /* Function : get_time
         Return an abstract "ticks" number that signifies time on the system.
@@ -176,6 +226,20 @@ portable_init(core_portable *p, int *argc, char *argv[])
 void
 portable_fini(core_portable *p)
 {
+    ee_printf("\nPerformance counter delta to before start:\n");
+    ee_printf("NumInstrRet = %d\n", stop_num_instr_ret - start_num_instr_ret);
+    ee_printf("NumCyclesLSU = %d\n", stop_num_cycles_lsu - start_num_cycles_lsu);
+    ee_printf("NumCyclesIF = %d\n", stop_num_cycles_if - start_num_cycles_if);
+    ee_printf("NumLoads = %d\n", stop_num_loads - start_num_loads);
+    ee_printf("NumStores = %d\n", stop_num_stores - start_num_stores);
+    ee_printf("NumJumps = %d\n", stop_num_jumps - start_num_jumps);
+    ee_printf("NumBranches = %d\n", stop_num_branches - start_num_branches);
+    ee_printf("NumBranchesTaken = %d\n", stop_num_branches_taken - start_num_branches_taken);
+    ee_printf("NumInstrRetC = %d\n", stop_num_instr_ret_c - start_num_instr_ret_c);
+    ee_printf("NumCyclesMulWait = %d\n", stop_num_cycles_mul_wait - start_num_cycles_mul_wait);
+    ee_printf("NumCyclesDivWait = %d\n", stop_num_cycles_div_wait - start_num_cycles_div_wait);
+    ee_printf("\n");
+
     p->portable_id = 0;
 
     test_status_set(kTestStatusPassed);
