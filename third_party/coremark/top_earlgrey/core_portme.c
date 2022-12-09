@@ -218,6 +218,11 @@ portable_init(core_portable *p, int *argc, char *argv[])
                                             .parity = kDifUartParityEven,
                                             }));
     base_uart_stdout(&uart);
+
+    // Print address of data that the core will operate on.
+    // TODO: Additionally (and probably instead of printing), it would make
+    // sense to check that this address is in the fastest available memory.
+    ee_printf("addr of data: 0x%08p\n", p);
 }
 
 /* Function : portable_fini
