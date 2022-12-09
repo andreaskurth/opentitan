@@ -223,6 +223,15 @@ portable_init(core_portable *p, int *argc, char *argv[])
     // TODO: Additionally (and probably instead of printing), it would make
     // sense to check that this address is in the fastest available memory.
     ee_printf("addr of data: 0x%08p\n", p);
+
+    // Print CPUCTRLSTS CSR to check that the instruction instruction cache is
+    // enabled, data-independent timing is disabled, and the insertion of dummy
+    // instructions is also disabled.
+    // TODO: Instead of printing, we should check the respective bits and raise
+    // an error if one of the assumptions above is violated.
+    uint32_t cpuctrlsts;
+    CSR_READ(CSR_REG_CPUCTRL, &cpuctrlsts);
+    ee_printf("cpuctrlsts = 0x%03x\n", cpuctrlsts);
 }
 
 /* Function : portable_fini
