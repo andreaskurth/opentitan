@@ -22,7 +22,7 @@ opentitan_functest(
     copts = [
         "-Wno-implicit-fallthrough",
         "-Wno-strict-prototypes",
-        "-DITERATIONS=8",
+        "-DITERATIONS=170",
         "-DPERFORMANCE_RUN=1",
         "-DTOTAL_DATA_SIZE=2000",
         "-DMAIN_HAS_NOARGC=1",
