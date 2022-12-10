@@ -7,6 +7,7 @@
 #include "sw/device/lib/base/mmio.h"
 #include "sw/device/lib/dif/dif_aes.h"
 #include "sw/device/lib/runtime/log.h"
+#include "sw/device/lib/runtime/print.h"
 #include "sw/device/lib/testing/aes_testutils.h"
 #include "sw/device/lib/testing/test_framework/check.h"
 #include "sw/device/lib/testing/test_framework/ottf_main.h"
@@ -52,26 +53,34 @@ status_t execute_test(dif_aes_t *aes) {
   };
   CHECK_DIF_OK(dif_aes_start(aes, &transaction, &key, NULL));
 
+  const unsigned char plaintext[] = "Hello RISC-V!";
+  CHECK(sizeof(plaintext) * 8 <= 128);
+
   // "Convert" plain data byte arrays to `dif_aes_data_t`.
   dif_aes_data_t in_data_plain;
-  memcpy(in_data_plain.data, kAesModesPlainText, sizeof(in_data_plain.data));
+  memset(in_data_plain.data, 0, sizeof(in_data_plain.data));
+  memcpy(in_data_plain.data, plaintext, sizeof(plaintext));
 
   // Load the plain text to trigger the encryption operation.
   AES_TESTUTILS_WAIT_FOR_STATUS(aes, kDifAesStatusInputReady, true, TIMEOUT);
+  LOG_INFO("Encrypting '%s' with AES-256 ...", plaintext);
   CHECK_DIF_OK(dif_aes_load_data(aes, in_data_plain));
 
   // Read out the produced cipher text.
   dif_aes_data_t out_data;
 
   AES_TESTUTILS_WAIT_FOR_STATUS(aes, kDifAesStatusOutputValid, true, TIMEOUT);
+  LOG_INFO("... done; ciphertext:");
 
   CHECK_DIF_OK(dif_aes_read_output(aes, &out_data));
+  for (const uint8_t* byte = (uint8_t*)out_data.data;
+    byte < ((uint8_t*)out_data.data + sizeof(out_data.data));
+    byte++)
+       base_printf("%02x", *byte);
+  base_printf("\n");
 
   // Finish the ECB encryption transaction.
   CHECK_DIF_OK(dif_aes_end(aes));
-
-  CHECK_ARRAYS_EQ((uint8_t *)out_data.data, kAesModesCipherTextEcb256,
-                  sizeof(out_data.data));
 
   // Setup ECB decryption transaction.
   transaction.operation = kDifAesOperationDecrypt;
@@ -79,17 +88,21 @@ status_t execute_test(dif_aes_t *aes) {
 
   // Load the previously produced cipher text to start the decryption operation.
   AES_TESTUTILS_WAIT_FOR_STATUS(aes, kDifAesStatusInputReady, true, TIMEOUT);
+  LOG_INFO("Decrypting ciphertext with AES-256 ...");
   CHECK_DIF_OK(dif_aes_load_data(aes, out_data));
 
   // Read out the produced plain text.
   AES_TESTUTILS_WAIT_FOR_STATUS(aes, kDifAesStatusOutputValid, true, TIMEOUT);
   CHECK_DIF_OK(dif_aes_read_output(aes, &out_data));
+  unsigned char decryptedText[32];
+  memcpy(decryptedText, out_data.data, sizeof(out_data.data));
+  LOG_INFO("... done: '%s'.", decryptedText);
 
   // Finish the ECB encryption transaction.
   CHECK_DIF_OK(dif_aes_end(aes));
 
-  CHECK_ARRAYS_EQ((uint8_t *)out_data.data, kAesModesPlainText,
-                  sizeof(out_data.data));
+  CHECK_ARRAYS_EQ((uint8_t *)plaintext, decryptedText,
+                  sizeof(plaintext));
   return OK_STATUS();
 }
 
