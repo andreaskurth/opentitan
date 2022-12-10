@@ -94,9 +94,11 @@ static void test_barrett384(dif_otbn_t *otbn) {
   CHECK_STATUS_OK(otbn_testutils_write_data(otbn, sizeof(u), &u, kInpU));
 
   CHECK_DIF_OK(dif_otbn_set_ctrl_software_errs_fatal(otbn, true));
+  LOG_INFO("Running a 384-bit Barrett Multiplication on OTBN ...");
   CHECK_STATUS_OK(otbn_testutils_execute(otbn));
   CHECK(dif_otbn_set_ctrl_software_errs_fatal(otbn, false) == kDifUnavailable);
   CHECK_STATUS_OK(otbn_testutils_wait_for_done(otbn, kDifOtbnErrBitsNoError));
+  LOG_INFO("... done.");
 
   // Reading back result (c).
   CHECK_STATUS_OK(otbn_testutils_read_data(otbn, sizeof(c), kOupC, &c));
@@ -156,8 +158,6 @@ bool test_main(void) {
       dif_otbn_init(mmio_region_from_addr(TOP_EARLGREY_OTBN_BASE_ADDR), &otbn));
 
   test_barrett384(&otbn);
-  test_sec_wipe(&otbn);
-  test_err_test(&otbn);
 
   return true;
 }
