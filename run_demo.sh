@@ -37,6 +37,7 @@ while $running; do
     for t in \
             aes_smoketest,AES-256 \
             otbn_ecdsa_op_irq_test,"OTBN   ECDSA p256" \
+            otbn_rsa_test,"OTBN   RSA 512" \
             ; do
         OLDIFS=$IFS
         IFS=','

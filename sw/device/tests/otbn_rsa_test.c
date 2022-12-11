@@ -9,6 +9,7 @@
 #include "sw/device/lib/testing/entropy_testutils.h"
 #include "sw/device/lib/testing/test_framework/check.h"
 #include "sw/device/lib/testing/test_framework/ottf_main.h"
+#include "sw/device/lib/runtime/print.h"
 
 #include "hw/top_earlgrey/sw/autogen/top_earlgrey.h"
 
@@ -89,6 +90,14 @@ enum {
 };
 
 OTTF_DEFINE_TEST_CONFIG();
+
+static void log_array(char * prefix, uint8_t *array, size_t len){
+  base_printf("%s", prefix);
+  for (const uint8_t* byte = array; byte < ((uint8_t*)array + len);byte++){
+      base_printf("%02x", *byte);
+  }
+  base_printf("\n");
+}
 
 /**
  * Encrypts a message with RSA.
@@ -246,7 +255,7 @@ static void rsa_roundtrip(uint32_t size_bytes, const uint8_t *modulus,
   CHECK(otbn_init(&otbn_ctx, mmio_region_from_addr(
                                  TOP_EARLGREY_OTBN_BASE_ADDR)) == kOtbnOk);
   CHECK(otbn_load_app(&otbn_ctx, kOtbnAppRsa) == kOtbnOk);
-  profile_end("Initialization");
+  // profile_end("Initialization");
 
   // Encrypt
   LOG_INFO("Encrypting");
@@ -255,14 +264,20 @@ static void rsa_roundtrip(uint32_t size_bytes, const uint8_t *modulus,
   check_data(out_encrypted, encrypted_expected, size_bytes);
   profile_end("Encryption");
 
+  log_array("\nPublic key  modulus : ", (uint8_t*)modulus, size_bytes);
+  log_array("Private exponent    : ", (uint8_t*)private_exponent, size_bytes);
+  base_printf("Message: %s\n", in);
+  log_array("Encrypted data     : ", (uint8_t*)out_encrypted, size_bytes);
+
   if (kTestDecrypt) {
     // Decrypt
-    LOG_INFO("Decrypting");
+    LOG_INFO("\nDecrypting");
     profile_start();
     rsa_decrypt(&otbn_ctx, modulus, private_exponent, encrypted_expected,
                 out_decrypted, size_bytes);
     check_data(out_decrypted, in, size_bytes);
     profile_end("Decryption");
+    base_printf("Message: %s\n\n", out_decrypted);
   }
 }
 
@@ -296,7 +311,7 @@ static void test_rsa512_roundtrip(void) {
   uint8_t out_encrypted[kRsa512SizeBytes] = {0};
   uint8_t out_decrypted[kRsa512SizeBytes] = {0};
 
-  LOG_INFO("Running RSA512 test");
+  // LOG_INFO("Running RSA512 test");
   rsa_roundtrip(kRsa512SizeBytes, kModulus, kPrivateExponent, kIn,
                 kEncryptedExpected, out_encrypted, out_decrypted);
 }
@@ -695,7 +710,7 @@ bool test_main(void) {
   entropy_testutils_auto_mode_init();
 
   test_rsa512_roundtrip();
-  test_rsa1024_roundtrip();
+  // test_rsa1024_roundtrip();
 
   if (kTestRsaGreater1k) {
     test_rsa2048_roundtrip();
