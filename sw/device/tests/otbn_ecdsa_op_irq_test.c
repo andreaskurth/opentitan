@@ -12,6 +12,7 @@
 #include "sw/device/lib/testing/rv_plic_testutils.h"
 #include "sw/device/lib/testing/test_framework/check.h"
 #include "sw/device/lib/testing/test_framework/ottf_main.h"
+#include "sw/device/lib/runtime/print.h"
 
 #include "hw/top_earlgrey/sw/autogen/top_earlgrey.h"
 
@@ -188,6 +189,14 @@ static void otbn_init_irq(void) {
   irq_external_ctrl(true);
 }
 
+static void log_array(char * prefix, uint8_t *array, size_t len){
+  base_printf("%s", prefix);
+  for (const uint8_t* byte = array; byte < ((uint8_t*)array + len);byte++){
+      base_printf("%02x", *byte);
+  }
+  base_printf("\n");
+}
+
 /**
  * Securely wipes OTBN DMEM and waits for Done interrupt.
  *
@@ -331,13 +340,18 @@ static void test_ecdsa_p256_roundtrip(void) {
       0x8b, 0xe9, 0x93, 0x3e, 0x28, 0x0c, 0xf0, 0x18, 0x0d, 0xf4, 0x6c,
       0x0b, 0xda, 0x7a, 0xbb, 0xe6, 0x8f, 0xb7, 0xa0, 0x45, 0x55};
 
+  log_array("Public key  Qx: ", (uint8_t*)kPublicKeyQx, sizeof(kPublicKeyQx));
+  log_array("            Qy: ", (uint8_t*)kPublicKeyQy, sizeof(kPublicKeyQy));
+  log_array("Private key D : ", (uint8_t*)kPrivateKeyD, sizeof(kPrivateKeyD));
+  base_printf("Message: %s\n", kIn);
+
   // Initialize
   uint64_t t_start_init = profile_start();
   CHECK_DIF_OK(
       dif_otbn_init(mmio_region_from_addr(TOP_EARLGREY_OTBN_BASE_ADDR), &otbn));
   otbn_init_irq();
   CHECK_STATUS_OK(otbn_testutils_load_app(&otbn, kOtbnAppP256Ecdsa));
-  profile_end_and_print(t_start_init, "Initialization");
+  // profile_end_and_print(t_start_init, "Initialization");
 
   // Sign
   uint8_t signature_r[32] = {0};
@@ -346,29 +360,31 @@ static void test_ecdsa_p256_roundtrip(void) {
   LOG_INFO("Signing");
   uint64_t t_start_sign = profile_start();
   p256_ecdsa_sign(&otbn, kIn, kPrivateKeyD, signature_r, signature_s);
-  profile_end_and_print(t_start_sign, "Sign");
+  profile_end_and_print(t_start_sign, "Signature");
 
   // Securely wipe OTBN data memory and reload app
-  LOG_INFO("Wiping OTBN DMEM and reloading app");
+  // LOG_INFO("Wiping OTBN DMEM and reloading app");
   otbn_wipe_dmem(&otbn);
   CHECK_STATUS_OK(otbn_testutils_load_app(&otbn, kOtbnAppP256Ecdsa));
 
   // Verify
   uint8_t signature_x_r[32] = {0};
 
-  LOG_INFO("Verifying");
+  // LOG_INFO("Verifying");
   uint64_t t_start_verify = profile_start();
   p256_ecdsa_verify(&otbn, kIn, signature_r, signature_s, kPublicKeyQx,
                     kPublicKeyQy, signature_x_r);
+
+  log_array("Signature: ", signature_x_r, sizeof(signature_x_r));
 
   // Include the r =? x_r comparison in the profiling as this is something
   // either OTBN or the host CPU needs to do as part of the signature
   // verification.
   check_data("signature_x_r", signature_r, signature_x_r, 32);
-  profile_end_and_print(t_start_verify, "Verify");
+  // profile_end_and_print(t_start_verify, "Verify");
 
   // Securely wipe OTBN data memory
-  LOG_INFO("Wiping OTBN DMEM");
+  // LOG_INFO("Wiping OTBN DMEM");
   otbn_wipe_dmem(&otbn);
 }
 
