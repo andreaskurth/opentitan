@@ -20,6 +20,10 @@ if test -z "$PAUSE"; then
 fi
 
 run_test() {
+    clear
+    if which figlet >/dev/null; then
+        figlet -w 100 -f big "$2"
+    fi
     $BAZEL test \
         --test_output=streamed \
         --nocache_test_results \
@@ -27,8 +31,15 @@ run_test() {
 }
 
 while $running; do
-    for t in aes_smoketest otbn_ecdsa_op_irq_test; do
-        run_test $t
+    for t in \
+            aes_smoketest,AES-256 \
+            otbn_ecdsa_op_irq_test,"OTBN   ECDSA p256" \
+            ; do
+        OLDIFS=$IFS
+        IFS=','
+        set -- $t
+        IFS=$OLDIFS
+        run_test $1 "$2"
         if ! $running; then
             break
         fi
