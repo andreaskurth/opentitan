@@ -158,7 +158,7 @@ def verilator_params(
     """
     default_args = [
         "--rcfile=",
-        "--logging={logging}",
+        "--logging=error",
     ]
     required_test_cmds = [
         "--interface=verilator",
@@ -236,7 +236,7 @@ def cw310_params(
 
     default_args = [
         "--rcfile=",
-        "--logging={logging}",
+        "--logging=error",
     ]
     required_test_cmds = [
         "--interface={}".format(interface),
