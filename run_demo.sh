@@ -25,9 +25,12 @@ run_test() {
         figlet -w 100 -f big "$2"
     fi
     $BAZEL test \
+        --color=yes \
         --test_output=streamed \
         --nocache_test_results \
-        //sw/device/tests:${1}_${TARGET}
+        //sw/device/tests:${1}_${TARGET} \
+        2> \
+    >(grep -v 'WARNING:' >&2)
 }
 
 while $running; do
