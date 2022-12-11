@@ -27,7 +27,7 @@ run_test() {
 }
 
 while $running; do
-    for t in aes_smoketest otbn_smoketest; do
+    for t in aes_smoketest otbn_ecdsa_op_irq_test; do
         run_test $t
         if ! $running; then
             break
