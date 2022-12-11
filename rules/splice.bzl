@@ -66,7 +66,7 @@ def _bitstream_splice_impl(ctx):
         ott_args.add_all(
             [
                 "--rcfile=",
-                "--logging=info",
+                "--logging=error",
                 "fpga",
                 "update-usr-access",
                 spliced.path,
