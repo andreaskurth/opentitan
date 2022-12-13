@@ -180,14 +180,6 @@ static void otbn_init_irq(void) {
   irq_external_ctrl(true);
 }
 
-static void log_array(char * prefix, uint8_t *array, size_t len){
-  base_printf("%s", prefix);
-  for (const uint8_t* byte = array; byte < ((uint8_t*)array + len);byte++){
-      base_printf("%02x", *byte);
-  }
-  base_printf("\n");
-}
-
 /**
  * Securely wipes OTBN DMEM and waits for Done interrupt.
  *
@@ -351,10 +343,10 @@ static void test_ecdsa_p256_roundtrip(void) {
       0x8b, 0xe9, 0x93, 0x3e, 0x28, 0x0c, 0xf0, 0x18, 0x0d, 0xf4, 0x6c,
       0x0b, 0xda, 0x7a, 0xbb, 0xe6, 0x8f, 0xb7, 0xa0, 0x45, 0x55};
 
-  log_array("Public key  Qx: ", (uint8_t*)kPublicKeyQx, sizeof(kPublicKeyQx));
-  log_array("            Qy: ", (uint8_t*)kPublicKeyQy, sizeof(kPublicKeyQy));
-  log_array("Private key D : ", (uint8_t*)kPrivateKeyD, sizeof(kPrivateKeyD));
-  base_printf("Message: %s\n", kIn);
+  log_array  ("Public key  Qx : ", (uint8_t*)kPublicKeyQx, sizeof(kPublicKeyQx));
+  log_array  ("            Qy : ", (uint8_t*)kPublicKeyQy, sizeof(kPublicKeyQy));
+  log_array  ("Private key D  : ", (uint8_t*)kPrivateKeyD, sizeof(kPrivateKeyD));
+  base_printf("Message        : %s\n", kIn);
 
   // Initialize
   uint64_t t_start_init = profile_start();
@@ -386,8 +378,7 @@ static void test_ecdsa_p256_roundtrip(void) {
   p256_ecdsa_verify(&otbn_ctx, kIn, signature_r, signature_s, kPublicKeyQx,
                     kPublicKeyQy, signature_x_r);
 
-  log_array("Signature: ", signature_x_r, sizeof(signature_x_r));
-  
+  log_array("Signature      : ", signature_x_r, sizeof(signature_x_r));
 
   // Include the r =? x_r comparison in the profiling as this is something
   // either OTBN or the host CPU needs to do as part of the signature

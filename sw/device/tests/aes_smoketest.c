@@ -70,21 +70,22 @@ bool test_main(void) {
 
   // Load the plain text to trigger the encryption operation.
   AES_TESTUTILS_WAIT_FOR_STATUS(&aes, kDifAesStatusInputReady, true, TIMEOUT);
-  LOG_INFO("Encrypting '%s' with AES-256 ...", plaintext);
+
+  log_array("\nKey share0:         : ", (uint8_t*)key.share0, sizeof(key.share0));
+  log_array  ("Key share1:         : ", (uint8_t*)key.share1, sizeof(key.share1));
+  base_printf("Message             : %s\n", plaintext);
+  base_printf("Encrypting ...");
+
   CHECK_DIF_OK(dif_aes_load_data(&aes, in_data_plain));
 
   // Read out the produced cipher text.
   dif_aes_data_t out_data;
 
   AES_TESTUTILS_WAIT_FOR_STATUS(&aes, kDifAesStatusOutputValid, true, TIMEOUT);
-  LOG_INFO("... done; ciphertext:");
+  LOG_INFO(" done!\n");
 
   CHECK_DIF_OK(dif_aes_read_output(&aes, &out_data));
-  for (const uint8_t* byte = (uint8_t*)out_data.data;
-    byte < ((uint8_t*)out_data.data + sizeof(out_data.data));
-    byte++)
-       base_printf("%02x", *byte);
-  base_printf("\n");
+  log_array  ("Encrypted data      : ", (uint8_t*)out_data.data, sizeof(out_data));
 
   // Finish the ECB encryption transaction.
   CHECK_DIF_OK(dif_aes_end(&aes));
@@ -95,15 +96,17 @@ bool test_main(void) {
 
   // Load the previously produced cipher text to start the decryption operation.
   AES_TESTUTILS_WAIT_FOR_STATUS(&aes, kDifAesStatusInputReady, true, TIMEOUT);
-  LOG_INFO("Decrypting ciphertext with AES-256 ...");
+  base_printf("Decrypting ciphertext with AES-256 ...");
   CHECK_DIF_OK(dif_aes_load_data(&aes, out_data));
 
   // Read out the produced plain text.
   AES_TESTUTILS_WAIT_FOR_STATUS(&aes, kDifAesStatusOutputValid, true, TIMEOUT);
   CHECK_DIF_OK(dif_aes_read_output(&aes, &out_data));
-  unsigned char decryptedText[32];
+  unsigned char decryptedText[32] = {0};
   memcpy(decryptedText, out_data.data, sizeof(out_data.data));
-  LOG_INFO("... done: '%s'.", decryptedText);
+  LOG_INFO("done!\n");
+
+  LOG_INFO  ("Decrypted data      : %s", decryptedText);
 
   // Finish the ECB encryption transaction.
   CHECK_DIF_OK(dif_aes_end(&aes));

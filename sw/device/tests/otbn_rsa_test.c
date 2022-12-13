@@ -91,14 +91,6 @@ enum {
 
 OTTF_DEFINE_TEST_CONFIG();
 
-static void log_array(char * prefix, uint8_t *array, size_t len){
-  base_printf("%s", prefix);
-  for (const uint8_t* byte = array; byte < ((uint8_t*)array + len);byte++){
-      base_printf("%02x", *byte);
-  }
-  base_printf("\n");
-}
-
 /**
  * Encrypts a message with RSA.
  *
@@ -257,17 +249,17 @@ static void rsa_roundtrip(uint32_t size_bytes, const uint8_t *modulus,
   CHECK(otbn_load_app(&otbn_ctx, kOtbnAppRsa) == kOtbnOk);
   // profile_end("Initialization");
 
+  log_array("\nPublic key  modulus : ", (uint8_t*)modulus, size_bytes);
+  log_array  ("Private exponent    : ", (uint8_t*)private_exponent, size_bytes);
+  base_printf("Message             : %s\n", in);
+
   // Encrypt
   LOG_INFO("Encrypting");
   profile_start();
   rsa_encrypt(&otbn_ctx, modulus, in, out_encrypted, size_bytes);
   check_data(out_encrypted, encrypted_expected, size_bytes);
   profile_end("Encryption");
-
-  log_array("\nPublic key  modulus : ", (uint8_t*)modulus, size_bytes);
-  log_array("Private exponent    : ", (uint8_t*)private_exponent, size_bytes);
-  base_printf("Message: %s\n", in);
-  log_array("Encrypted data     : ", (uint8_t*)out_encrypted, size_bytes);
+  log_array  ("Encrypted data      : ", (uint8_t*)out_encrypted, size_bytes);
 
   if (kTestDecrypt) {
     // Decrypt
@@ -277,7 +269,7 @@ static void rsa_roundtrip(uint32_t size_bytes, const uint8_t *modulus,
                 out_decrypted, size_bytes);
     check_data(out_decrypted, in, size_bytes);
     profile_end("Decryption");
-    base_printf("Message: %s\n\n", out_decrypted);
+    base_printf("Message              : %s\n\n", out_decrypted);
   }
 }
 

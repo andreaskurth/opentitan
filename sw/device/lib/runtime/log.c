@@ -54,13 +54,14 @@ void base_log_internal_core(log_fields_t log, ...) {
     ++base_name;  // Remove the final '/'.
   }
 
+
   // A small global counter that increments with each log line. This can be
   // useful for seeing how many times this function has been called, even if
   // nothing was printed for some time.
   static uint16_t global_log_counter = 0;
 
-  base_printf("%s%05d %s:%d] ", stringify_severity(log.severity),
-              global_log_counter, base_name, log.line);
+  // base_printf("%s%05d %s:%d] ", stringify_severity(log.severity),
+  //             global_log_counter, base_name, log.line);
   ++global_log_counter;
 
   va_list args;
@@ -69,6 +70,14 @@ void base_log_internal_core(log_fields_t log, ...) {
   va_end(args);
 
   base_printf("\r\n");
+}
+
+void log_array(char * prefix, uint8_t *array, size_t len){
+  base_printf("%s", prefix);
+  for (const uint8_t* byte = array; byte < ((uint8_t*)array + len);byte++){
+      base_printf("%02x", *byte);
+  }
+  base_printf("\n");
 }
 
 /**

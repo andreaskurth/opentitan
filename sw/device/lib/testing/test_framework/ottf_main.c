@@ -103,15 +103,24 @@ static void report_test_status(bool result) {
 
   test_status_set(result ? kTestStatusPassed : kTestStatusFailed);
 }
-
+#define KNRM  "\x1B[0m"
+#define KRED  "\x1B[31m"
+#define KGRN  "\x1B[32m"
+#define KYEL  "\x1B[33m"
+#define KBLU  "\x1B[34m"
+#define KMAG  "\x1B[35m"
+#define KCYN  "\x1B[36m"
+#define KWHT  "\x1B[37m"
 // A wrapper function is required to enable `test_main()` and test teardown
 // logic to be invoked as a FreeRTOS task. This wrapper can be used by tests
 // that are run on bare-metal.
 static void test_wrapper(void *task_parameters) {
   // Invoke test hooks that can be overridden by closed-source code.
+  base_printf("%s", KYEL);
   bool result = manufacturer_pre_test_hook();
   result = result && test_main();
   result = result && manufacturer_post_test_hook();
+  base_printf("%s", KNRM);
   report_test_status(result);
 }
 
