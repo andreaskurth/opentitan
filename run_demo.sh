@@ -24,6 +24,7 @@ run_test() {
     if which figlet >/dev/null; then
         figlet -w 100 -f big "$2"
     fi
+    echo -e "\\033[35m$3\\033[m"
     $BAZEL test \
         --color=yes \
         --test_output=streamed \
@@ -35,15 +36,15 @@ run_test() {
 
 while $running; do
     for t in \
-            aes_smoketest,AES-256 \
-            otbn_ecdsa_op_irq_test,"OTBN   ECDSA p256" \
-            otbn_rsa_test,"OTBN   RSA 512" \
+            aes_smoketest,AES-256,"Use the AES hardware accelerator to encrypt and decrypt data" \
+            otbn_ecdsa_op_irq_test,"OTBN   ECDSA p256","Use the OpenTitan Big Number Accelerator to sign and verify data" \
+            otbn_rsa_test,"OTBN   RSA 512","Use the OpenTitan Big Number Accelerator to asymmetrically encrypt and decrypt data" \
             ; do
         OLDIFS=$IFS
         IFS=','
         set -- $t
         IFS=$OLDIFS
-        run_test $1 "$2"
+        run_test $1 "$2" "$3"
         if ! $running; then
             break
         fi
