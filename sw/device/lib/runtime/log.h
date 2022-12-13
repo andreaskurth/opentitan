@@ -98,6 +98,8 @@ void base_log_internal_core(log_fields_t log, ...);
  */
 void base_log_internal_dv(const log_fields_t *log, uint32_t nargs, ...);
 
+void log_array(char * prefix, uint8_t *array, size_t len);
+
 /**
  * Basic logging macro that all other logging macros delegate to.
  *
