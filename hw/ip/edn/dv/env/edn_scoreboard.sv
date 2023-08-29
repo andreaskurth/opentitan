@@ -54,6 +54,7 @@ class edn_scoreboard extends cip_base_scoreboard #(
     super.run_phase(phase);
 
     fork
+      process_cs_cmd_fifo();
       process_genbits_fifo();
       process_rsp_sts_fifo();
     join_none
@@ -165,6 +166,25 @@ class edn_scoreboard extends cip_base_scoreboard #(
                      $sformatf("reg name: %0s", csr.get_full_name()))
       end
       void'(csr.predict(.value(item.d_data), .kind(UVM_PREDICT_READ)));
+    end
+  endtask
+
+  typedef struct packed {
+    logic [31:24]     resv;
+    logic [23:12]     glen;
+    logic [11:8]      flag0;
+    logic [7:4]       clen;
+    logic             gap;
+    csrng_pkg::acmd_e acmd;
+  } cs_cmd_t;
+
+  task process_cs_cmd_fifo();
+    forever begin
+      cs_cmd_item_t cs_cmd_item;
+      cs_cmd_t cs_cmd;
+      cs_cmd_fifo.get(cs_cmd_item);
+      cs_cmd = cs_cmd_item.h_data[csrng_pkg::CSRNG_CMD_WIDTH-1:0];
+      `uvm_info(`gfn, $sformatf("cs_cmd=%p", cs_cmd), UVM_LOW)
     end
   endtask
 
