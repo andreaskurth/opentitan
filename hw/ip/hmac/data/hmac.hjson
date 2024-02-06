@@ -279,9 +279,10 @@
               ''',
         count: "NumWords",
         cname: "HMAC",
-        swaccess: "ro",
-        hwaccess: "hwo",
+        swaccess: "rw",
+        hwaccess: "hrw",
         hwext: "true",
+        hwqe: "true",
         fields: [
           { bits: "31:0", name: "digest", desc: "32-bit chunk of 256-bit Digest" }
         ]
