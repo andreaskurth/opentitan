@@ -31,6 +31,8 @@ module prim_sha2 import prim_sha2_pkg::*;
   output logic        hash_done_o,
 
   input  [127:0]            message_length_i, // bits but byte based
+  input  sha_word64_t [7:0] digest_i,
+  input  logic [7:0]        digest_we_i,
   output sha_word64_t [7:0] digest_o, // tie off unused port slice when MultimodeEn = 0
   output logic idle_o
 );
@@ -140,8 +142,12 @@ module prim_sha2 import prim_sha2_pkg::*;
             digest_d[i] = InitHash_512[i];
           end
         end
-      end else if (!sha_en_i || clear_digest) begin
+      end else if (clear_digest) begin
         digest_d = '0;
+      end else if (!sha_en_i) begin
+        for (int i = 0; i < 8; i++) begin
+          digest_d[i] = digest_we_i[i] ? digest_i[i] : digest_q[i];
+        end
       end else if (update_digest) begin
         for (int i = 0 ; i < 8 ; i++) begin
           digest_d[i] = digest_q[i] + hash_q[i];
@@ -234,8 +240,12 @@ module prim_sha2 import prim_sha2_pkg::*;
         for (int i = 0 ; i < 8 ; i++) begin
             digest256_d[i] = InitHash_256[i];
         end
-      end else if (!sha_en_i || clear_digest) begin
+      end else if (clear_digest) begin
         digest256_d = '0;
+      end else if (!sha_en_i) begin
+        for (int i = 0; i < 8; i++) begin
+          digest256_d[i] = digest_we_i[i] ? digest_i[i][31:0] : digest256_q[i];
+        end
       end else if (update_digest) begin
         for (int i = 0 ; i < 8 ; i++) begin
           digest256_d[i] = digest256_q[i] + hash256_q[i];
@@ -380,7 +390,14 @@ module prim_sha2 import prim_sha2_pkg::*;
     else         sha_st_q <= sha_st_d;
   end
 
-  assign clear_digest = hash_start_i;
+  logic sha_en_q;
+
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) sha_en_q <= 1'b0;
+    else         sha_en_q <= sha_en_i;
+  end
+
+  assign clear_digest = hash_start_i | (~sha_en_i & sha_en_q);
 
   always_comb begin
     update_digest    = 1'b0;
