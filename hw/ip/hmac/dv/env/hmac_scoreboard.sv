@@ -71,6 +71,7 @@ class hmac_scoreboard extends cip_base_scoreboard #(.CFG_T (hmac_env_cfg),
           update_wr_msg_length(msg_q.size());
         end
       end else begin
+        bit do_predict = 1'b1;
         case (csr_name)
           "cmd": begin
             if (sha_en && !(hmac_start && item.a_data[HashStart])) begin
@@ -128,7 +129,11 @@ class hmac_scoreboard extends cip_base_scoreboard #(.CFG_T (hmac_env_cfg),
             // Do nothing
           end
           "digest_0", "digest_1", "digest_2", "digest_3", "digest_4", "digest_5", "digest_6",
-          "digest_7", "status", "msg_length_lower", "msg_length_upper": begin
+          "digest_7": begin
+            // Predict updated value coming from write iff SHA core is disabled.
+            do_predict = !sha_en;
+          end
+          "status", "msg_length_lower", "msg_length_upper": begin
             `uvm_error(`gfn, $sformatf("this reg does not have write access: %0s",
                                        csr.get_full_name()))
           end
@@ -136,8 +141,10 @@ class hmac_scoreboard extends cip_base_scoreboard #(.CFG_T (hmac_env_cfg),
             `uvm_fatal(`gfn, $sformatf("invalid csr: %0s", csr.get_full_name()))
           end
         endcase
-        // csr write: predict and update according to the csr names
-        void'(csr.predict(.value(item.a_data), .kind(UVM_PREDICT_WRITE), .be(item.a_mask)));
+        if (do_predict) begin
+          // csr write: predict and update according to the csr names
+          void'(csr.predict(.value(item.a_data), .kind(UVM_PREDICT_WRITE), .be(item.a_mask)));
+        end
       end
     end
 
