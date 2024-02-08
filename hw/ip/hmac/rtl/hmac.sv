@@ -343,6 +343,13 @@ module hmac
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
       message_length <= '0;
+    end else if (!sha_en) begin
+      if (reg2hw.msg_length_lower.qe) begin
+        message_length[31:0] <= reg2hw.msg_length_lower.q;
+      end
+      if (reg2hw.msg_length_upper.qe) begin
+        message_length[63:32] <= reg2hw.msg_length_upper.q;
+      end
     end else if (hash_start) begin
       message_length <= '0;
     end else if (msg_write && sha_en && packer_ready) begin
@@ -350,9 +357,7 @@ module hmac
     end
   end
 
-  assign hw2reg.msg_length_upper.de = 1'b1;
   assign hw2reg.msg_length_upper.d = message_length[63:32];
-  assign hw2reg.msg_length_lower.de = 1'b1;
   assign hw2reg.msg_length_lower.d = message_length[31:0];
 
 
