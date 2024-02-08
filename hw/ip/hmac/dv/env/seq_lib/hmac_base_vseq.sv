@@ -89,13 +89,26 @@ class hmac_base_vseq extends cip_base_vseq #(.CFG_T               (hmac_env_cfg)
     csr_wr(ral.key[key_idx], rand_key_value);
   endtask
 
-  // trigger hash computation to start
+  // start hash computations
   virtual task trigger_hash();
     csr_wr(.ptr(ral.cmd), .value(1'b1 << HashStart));
     // if sha is not enabled, assert error interrupt and check error code
     if (!ral.cfg.sha_en.get_mirrored_value()) check_error_code();
   endtask
 
+  // restart hash computations
+  virtual task trigger_hash_restart();
+    csr_wr(.ptr(ral.cmd), .value(1'b1 << HashRestart));
+    // if sha is not enabled, assert error interrupt and check error code
+    if (!ral.cfg.sha_en.get_mirrored_value()) check_error_code();
+  endtask
+
+  // stop hash computations
+  virtual task trigger_hash_stop();
+    csr_wr(.ptr(ral.cmd), .value(1'b1 << HashStop));
+  endtask
+
+  // trigger calculation of digest at the end of a message
   virtual task trigger_process();
     csr_wr(.ptr(ral.cmd), .value(1'b1 << HashProcess));
     cfg.hash_process_triggered = 1;
@@ -117,6 +130,7 @@ class hmac_base_vseq extends cip_base_vseq #(.CFG_T               (hmac_env_cfg)
     // read digest value and output read value
   virtual task csr_rd_digest(output bit [TL_DW-1:0] digest[8]);
     foreach (digest[i]) csr_rd(.ptr(ral.digest[i]), .value(digest[i]));
+    foreach (digest[i]) `uvm_info(`gfn, $sformatf("digest[%0d]=32'h%08x", i, digest[i]), UVM_LOW)
   endtask
 
   // write digest value
@@ -145,6 +159,7 @@ class hmac_base_vseq extends cip_base_vseq #(.CFG_T               (hmac_env_cfg)
 
   // write msg to DUT, read status FIFO FULL and check intr FIFO FULL
   virtual task wr_msg(bit [7:0] msg[], bit non_blocking = $urandom_range(0, 1));
+    int bits_written = 0;
     bit [7:0] msg_q[$] = msg;
     // randomly pick the size of bytes to write
     // unless msg size is smaller than randomized size
@@ -159,13 +174,45 @@ class hmac_base_vseq extends cip_base_vseq #(.CFG_T               (hmac_env_cfg)
       end
       word = {>>byte{word_unpack}};
       `uvm_info(`gfn, $sformatf("wr_addr = %0h, wr_mask = %0h, words = 0x%0h",
-                                wr_addr, wr_mask, word), UVM_HIGH)
+                                wr_addr, wr_mask, word), UVM_LOW)
       tl_access(.addr(cfg.ral.get_addr_from_offset(wr_addr)),
                 .write(1'b1), .data(word), .mask(wr_mask), .blocking(non_blocking));
+      bits_written += $countones(wr_mask) * 8;
+
+      `uvm_info(`gfn, $sformatf("bits written = %0d", bits_written), UVM_LOW)
+
+      if (bits_written % 512 == 0 && msg_q.size() > 0) begin
+        // Multiple of block size reached; this is an opportunity to save the digest by reading it
+        // from SW, then disable SHA, reload the digest, and restart message processing.
+        // TODO: randomize whether the opportunity taken and change back to *multiple of* block size
+        bit [TL_DW-1:0] digest[8];
+        bit [2*TL_DW-1:0] msg_length;
+        `uvm_info(`gfn, $sformatf("Saving and restoring digest"), UVM_LOW)
+        // Ensure all messages have been written to FIFO (in case the `tl_access`es above were
+        // non-blocking).
+        csr_utils_pkg::wait_no_outstanding_access();
+        // Stop hash operations.
+        trigger_hash_stop();
+        cfg.clk_rst_vif.wait_clks(100); // TODO: need some signal that digest compression is complete (aka hmac is stopped?)
+        // Read the digest to save it.
+        csr_rd_digest(digest);
+        // Read message length.
+        csr_rd_msg_length(msg_length);
+        // Disable SHA so we can write digest and message length.
+        csr_wr(.ptr(ral.cfg.sha_en), .value(1'b0)); // TODO: why is this still necessary? can't we make it so that stop_hash is sufficient?
+        csr_wr_msg_length('0); // TODO: this can be removed
+        // Reload the digest by writing it back.
+        csr_wr_digest(digest);
+        // Reload the message length by writing it back.
+        csr_wr_msg_length(msg_length);
+        // Re-enable SHA and restart hashing.
+        csr_wr(.ptr(ral.cfg.sha_en), .value(1'b1));
+        trigger_hash_restart();
+      end
 
       if (ral.cfg.sha_en.get_mirrored_value()) begin
         if (!do_back_pressure) begin
-          if ($urandom_range(0, 1)) check_status_intr();
+          // if ($urandom_range(0, 1)) check_status_intr();
         end
         // randomly change key, config regs during msg wr, should trigger error or be discarded
         write_discard_config_and_key(wr_config_during_hash, wr_key_during_hash);
@@ -213,16 +260,22 @@ class hmac_base_vseq extends cip_base_vseq #(.CFG_T               (hmac_env_cfg)
     end
   endtask
 
-  // read the message length from the DUT reg
+  // read the message length from the DUT reg (but don't return it)
   virtual task rd_msg_length();
     bit [2*TL_DW-1:0] unused;
     csr_rd_msg_length(unused);
   endtask
 
+  // read the message length from the DUT reg
   virtual task csr_rd_msg_length(output bit [2*TL_DW-1:0] msg_length);
-    csr_rd(ral.msg_length_upper, length_upper);
-    csr_rd(ral.msg_length_lower, length_lower);
-    msg_length = {length_upper, length_lower};
+    csr_rd(ral.msg_length_upper, msg_length[2*TL_DW-1:TL_DW]);
+    csr_rd(ral.msg_length_lower, msg_length[TL_DW-1:0]);
+  endtask
+
+  // write message length to the DUT reg
+  virtual task csr_wr_msg_length(bit [2*TL_DW-1:0] msg_length);
+    csr_wr(.ptr(ral.msg_length_upper), .value(msg_length[2*TL_DW-1:TL_DW]));
+    csr_wr(.ptr(ral.msg_length_lower), .value(msg_length[TL_DW-1:0]));
   endtask
 
   // read status FIFO FULL and check intr FIFO FULL

@@ -16,9 +16,11 @@ module hmac_core import prim_sha2_pkg::*; (
   input        hmac_en,
 
   input        reg_hash_start,
+  input        reg_hash_restart,
   input        reg_hash_process,
   output logic hash_done,
   output logic sha_hash_start,
+  output logic sha_hash_restart,
   output logic sha_hash_process,
   input        sha_hash_done,
 
@@ -51,6 +53,7 @@ module hmac_core import prim_sha2_pkg::*; (
   localparam bit [BlockSizeBits:0] BlockSizeBSB = BlockSize[BlockSizeBits:0];
 
   logic hash_start; // generated from internal state machine
+  logic hash_restart; // TODO: proper logic for this
   logic hash_process; // generated from internal state machine to trigger hash
   logic hmac_hash_done;
 
@@ -104,6 +107,7 @@ module hmac_core import prim_sha2_pkg::*; (
   logic reg_hash_process_flag;
 
   assign sha_hash_start   = (hmac_en) ? hash_start                       : reg_hash_start ;
+  assign sha_hash_restart = (hmac_en) ? hash_restart                     : reg_hash_restart;
   assign sha_hash_process = (hmac_en) ? reg_hash_process | hash_process  : reg_hash_process ;
   assign hash_done        = (hmac_en) ? hmac_hash_done                   : sha_hash_done  ;
 
@@ -153,7 +157,7 @@ module hmac_core import prim_sha2_pkg::*; (
       reg_hash_process_flag <= 1'b0;
     end else if (reg_hash_process) begin
       reg_hash_process_flag <= 1'b1;
-    end else if (hmac_hash_done || reg_hash_start) begin
+    end else if (hmac_hash_done || reg_hash_start || reg_hash_restart) begin
       reg_hash_process_flag <= 1'b0;
     end
   end
@@ -200,6 +204,7 @@ module hmac_core import prim_sha2_pkg::*; (
     sel_rdata = SelFifo;
 
     hash_start   = 1'b0;
+    hash_restart = 1'b0;
     hash_process = 1'b0;
 
     unique case (st_q)

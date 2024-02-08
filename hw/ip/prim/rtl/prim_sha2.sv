@@ -160,10 +160,14 @@ module prim_sha2 import prim_sha2_pkg::*;
         end
         if (hash_done_o == 1'b1 && digest_mode_flag_q == SHA2_384) begin
           // final digest truncation for SHA-2 384
+          // TODO: this doesn't work, we lose information. do we really have to truncate according
+          // to spec? or can we assume the consumer ignores the upper words?
           digest_d[6] = '0;
           digest_d[7] = '0;
         end else if (hash_done_o == 1'b1 && digest_mode_flag_q == SHA2_256) begin
           // make sure to clear out most significant 32-bits of each digest word (zero-padding)
+          // TODO: is this really necessary? the internal state of SHA-256 should only be 8x32 bit anyway.
+          // and even if we do this, it shouldn't be a problem
           for (int i = 0 ; i < 8 ; i++) begin
             digest_d[i][63:32] = 32'b0;
           end
@@ -470,7 +474,8 @@ module prim_sha2 import prim_sha2_pkg::*;
     .shaf_rdata_o  (shaf_rdata),
     .shaf_rready_i (shaf_rready), // indicates that w is ready for more words from padding buffer
     .sha_en_i,
-    .hash_start_i  (hash_start),
+    .hash_start_i,
+    .hash_restart_i,
     .digest_mode_i,
     .hash_process_i,
     .hash_done_o,

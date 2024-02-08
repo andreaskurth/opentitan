@@ -195,6 +195,16 @@
                 based on currently received message.
                 '''
         }
+        { bits: "2",
+          name: "hash_stop",
+          desc: '''TODO
+                '''
+        }
+        { bits: "3",
+          name: "hash_restart",
+          desc: '''TODO
+                '''
+        }
       ],
     }
     { name: "STATUS",

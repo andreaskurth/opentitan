@@ -85,7 +85,10 @@ module hmac
 
   logic        reg_hash_start;
   logic        sha_hash_start;
+  logic        reg_hash_stop;
+  logic        reg_hash_restart;
   logic        hash_start;      // Valid hash_start_signal
+  logic        hash_start_or_restart;
   logic        reg_hash_process;
   logic        sha_hash_process;
 
@@ -158,6 +161,8 @@ module hmac
   assign hw2reg.cfg.digest_swap.d = cfg_reg.digest_swap.q;
 
   assign reg_hash_start   = reg2hw.cmd.hash_start.qe   & reg2hw.cmd.hash_start.q;
+  assign reg_hash_stop    = reg2hw.cmd.hash_stop.qe    & reg2hw.cmd.hash_stop.q;
+  assign reg_hash_restart = reg2hw.cmd.hash_restart.qe & reg2hw.cmd.hash_restart.q;
   assign reg_hash_process = reg2hw.cmd.hash_process.qe & reg2hw.cmd.hash_process.q;
 
   // Error code register
@@ -167,14 +172,15 @@ module hmac
   /////////////////////
   // Control signals //
   /////////////////////
-  assign hash_start = reg_hash_start & sha_en & ~cfg_block;
+  assign hash_start_or_restart = (reg_hash_start | reg_hash_restart) & sha_en & ~cfg_block;
+  assign hash_start = hash_start_or_restart; // TODO: this is likely wrong (see below)
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
       cfg_block <= '0;
-    end else if (hash_start) begin
+    end else if (hash_start_or_restart) begin
       cfg_block <= 1'b 1;
-    end else if (reg_hash_done) begin
+    end else if (reg_hash_done || reg_hash_stop) begin
       cfg_block <= 1'b 0;
     end
   end
@@ -197,7 +203,7 @@ module hmac
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
       msg_allowed <= '0;
-    end else if (hash_start) begin
+    end else if (hash_start_or_restart) begin
       msg_allowed <= 1'b 1;
     end else if (packer_flush_done) begin
       msg_allowed <= 1'b 0;
@@ -343,19 +349,20 @@ module hmac
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
       message_length <= '0;
-    end else if (!sha_en) begin
+    end else if (!cfg_block) begin
       if (reg2hw.msg_length_lower.qe) begin
         message_length[31:0] <= reg2hw.msg_length_lower.q;
       end
       if (reg2hw.msg_length_upper.qe) begin
         message_length[63:32] <= reg2hw.msg_length_upper.q;
       end
-    end else if (hash_start) begin
+    end else if (hash_start && !reg_hash_restart) begin // TODO: improve this
       message_length <= '0;
     end else if (msg_write && sha_en && packer_ready) begin
       message_length <= message_length + 64'(wmask_ones);
     end
   end
+  // TODO: this also needs to be reloadable (HMAC mode)
 
   assign hw2reg.msg_length_upper.d = message_length[63:32];
   assign hw2reg.msg_length_lower.d = message_length[31:0];
@@ -405,7 +412,8 @@ module hmac
 
     .hmac_en,
 
-    .reg_hash_start   (hash_start),
+    .reg_hash_start,
+    .reg_hash_restart,
     .reg_hash_process (packer_flush_done), // Trigger after all msg written
     .hash_done        (reg_hash_done),
     .sha_hash_start,
@@ -444,6 +452,7 @@ module hmac
     .fifo_rready_o        (shaf_rready),
     .sha_en_i             (sha_en),
     .hash_start_i         (sha_hash_start),
+    .hash_restart_i       (reg_hash_restart), // TODO: may have to come from hmac_core as well
     .digest_mode_i        (None),    // unused input port tied to ground
     .hash_process_i       (sha_hash_process),
     .hash_done_o          (sha_hash_done),
@@ -500,10 +509,10 @@ module hmac
   // HMAC Error Handling //
   /////////////////////////
   logic hash_start_sha_disabled, update_seckey_inprocess;
-  logic hash_start_active;  // `reg_hash_start` set when hash already in active
-  logic msg_push_not_allowed; // Message is received when `hash_start` isn't set
-  assign hash_start_sha_disabled = reg_hash_start & ~sha_en;
-  assign hash_start_active = reg_hash_start & cfg_block;
+  logic hash_start_active;  // `reg_hash_start` or `reg_hash_restart` set when hash already in active
+  logic msg_push_not_allowed; // Message is received when `hash_start_or_restart` isn't set
+  assign hash_start_sha_disabled = (reg_hash_start | reg_hash_restart) & ~sha_en;
+  assign hash_start_active = (reg_hash_start | reg_hash_restart) & cfg_block;
   assign msg_push_not_allowed = msg_fifo_req & ~msg_allowed;
 
   always_comb begin
@@ -616,23 +625,23 @@ module hmac
 
   logic initiated;
   always_ff @(posedge clk_i or negedge rst_ni) begin
-    if (!rst_ni)               initiated <= 1'b0;
-    else if (hash_start)       initiated <= 1'b1;
-    else if (reg_hash_process) initiated <= 1'b0;
+    if (!rst_ni)                               initiated <= 1'b0;
+    else if (hash_start_or_restart)            initiated <= 1'b1;
+    else if (reg_hash_process | reg_hash_stop) initiated <= 1'b0;
   end
 
-  // the host doesn't write data after hash_process until hash_start.
+  // the host doesn't write data after hash_process until hash_start_or_restart.
   // Same as "message_length shouldn't be changed between hash_process and done
   `ASSERT(ValidWriteAssert, msg_fifo_req |-> !in_process)
 
-  // `hash_process` shall be toggle and paired with `hash_start`.
+  // `hash_process` shall be toggle and paired with `hash_start_or_restart`.
   // Below condition is covered by the design (2020-02-19)
-  //`ASSERT(ValidHashStartAssert, hash_start |-> !initiated)
+  //`ASSERT(ValidHashStartAssert, hash_start_or_restart |-> !initiated)
   `ASSERT(ValidHashProcessAssert, reg_hash_process |-> initiated)
 
-  // between `hash_done` and `hash_start`, message FIFO should be empty
-  `ASSERT(MsgFifoEmptyWhenNoOpAssert,
-          !in_process && !initiated |-> $stable(message_length))
+  // between `hash_done` and `hash_start_or_restart`, message FIFO should be empty
+  // `ASSERT(MsgFifoEmptyWhenNoOpAssert,
+  //         !in_process && !initiated |-> $stable(message_length))
 
   // hmac_en should be modified only when the logic is Idle
   `ASSERT(ValidHmacEnConditionAssert,

@@ -23,6 +23,7 @@ module prim_sha2_pad import prim_sha2_pkg::*;
   input                 shaf_rready_i,
   input                 sha_en_i,
   input                 hash_start_i,
+  input                 hash_restart_i,
   input digest_mode_e   digest_mode_i,
   input                 hash_process_i,
   input                 hash_done_o,
@@ -34,9 +35,14 @@ module prim_sha2_pad import prim_sha2_pkg::*;
   logic         inc_txcount;
   logic         fifo_partial;
   logic         txcnt_eq_1a0;
+  logic         hash_start;
 
   logic         hash_process_flag_d, hash_process_flag_q;
   digest_mode_e digest_mode_flag_d,  digest_mode_flag_q;
+
+  // Most operations and control signals are identical no matter if we are starting or re-starting
+  // to hash.
+  assign hash_start = hash_start_i | hash_restart_i;
 
   // tie off unused inport ports and signals
   if (!MultimodeEn) begin : gen_tie_unused
@@ -54,8 +60,8 @@ module prim_sha2_pad import prim_sha2_pkg::*;
                                                                         (tx_count[9:0] == 10'h340) :
                                                                         '0;
 
-  assign hash_process_flag_d = (~sha_en_i || hash_start_i || hash_done_o) ? 1'b0 :
-                               hash_process_i                             ? 1'b1 :
+  assign hash_process_flag_d = (~sha_en_i || hash_start || hash_done_o) ? 1'b0 :
+                               hash_process_i                           ? 1'b1 :
                                                                           hash_process_flag_q;
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
@@ -179,7 +185,7 @@ module prim_sha2_pad import prim_sha2_pkg::*;
       StIdle: begin
         sel_data      = FifoIn;
         shaf_rvalid_o = 1'b0;
-        if (sha_en_i && hash_start_i) begin
+        if (sha_en_i && hash_start) begin
           inc_txcount = 1'b0;
           st_d        = StFifoReceive;
         end else begin
@@ -307,8 +313,8 @@ module prim_sha2_pad import prim_sha2_pkg::*;
       end
     endcase
 
-    if (!sha_en_i)         st_d = StIdle;
-    else if (hash_start_i) st_d = StFifoReceive;
+    if (!sha_en_i)       st_d = StIdle;
+    else if (hash_start) st_d = StFifoReceive;
   end
 
   // tx_count
@@ -317,6 +323,8 @@ module prim_sha2_pad import prim_sha2_pkg::*;
 
     if (hash_start_i) begin
       tx_count_d = '0;
+    end else if (hash_restart_i) begin
+      tx_count_d = message_length_i;
     end else if (inc_txcount) begin
       if ((digest_mode_flag_q == SHA2_256) || !MultimodeEn) begin
         tx_count_d[127:5] = tx_count[127:5] + 1'b1;

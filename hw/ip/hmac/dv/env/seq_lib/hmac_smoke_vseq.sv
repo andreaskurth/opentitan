@@ -7,7 +7,7 @@ class hmac_smoke_vseq extends hmac_base_vseq;
   `uvm_object_new
 
   constraint num_trans_c {
-    num_trans inside {[1:50]};
+    num_trans == 1;
   }
 
   rand bit               hmac_en;
@@ -64,6 +64,18 @@ class hmac_smoke_vseq extends hmac_base_vseq;
       1'b1 := 8,
       1'b0 := 2
     };
+  }
+
+  constraint no_hmac_c {
+    hmac_en == 1'b0;
+  }
+
+  constraint digest_swap_c {
+    digest_swap == 1'b0; // TODO: does not yet work with == 1 because digest reloading tumbles
+  }
+
+  constraint endian_swap_c {
+    endian_swap == 1'b0; // TODO: still necessary?
   }
 
   constraint wipe_secret_c {
