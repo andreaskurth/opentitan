@@ -1020,7 +1020,7 @@ module csrng_core import csrng_pkg::*; #(
     .rst_ni   (rst_ni),
     .req_chk_i(cs_enable_fo[1]),
     .req_i    (cmd_arb_req),
-    .data_i   ('{default: 1'b0}),
+    .data_i   ('0),
     .gnt_o    (cmd_arb_gnt),
     .idx_o    (cmd_arb_idx),
     .valid_o  (acmd_avail), // 1 req
