@@ -127,6 +127,26 @@
           name: "POLARITY_CH1",
           desc: "Clock (`pcl`) polarity for Channel 1.  If low, `pda` signal changes on falling edge of `pcl` signal, otherwise pda changes on rising edge. Note that writes to a channel's configuration registers have no effect while the channel is enabled."
         }
+        { bits: "4"
+          resval: "0",
+          name: "DISABLED_LEVEL_PDA_CH0",
+          desc: "Level (0 or 1) that PDA of Channel 0 has while pattgen is disabled.",
+        }
+        { bits: "5"
+          resval: "0",
+          name: "DISABLED_LEVEL_PCL_CH0",
+          desc: "Level (0 or 1) that PCL of Channel 0 has while pattgen is disabled.",
+        }
+        { bits: "6"
+          resval: "0",
+          name: "DISABLED_LEVEL_PDA_CH1",
+          desc: "Level (0 or 1) that PDA of Channel 1 has while pattgen is disabled.",
+        }
+        { bits: "7"
+          resval: "0",
+          name: "DISABLED_LEVEL_PCL_CH1",
+          desc: "Level (0 or 1) that PCL of Channel 1 has while pattgen is disabled.",
+        }
       ]
     }
     { name: "PREDIV_CH0",

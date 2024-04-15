@@ -7,6 +7,8 @@ package pattgen_ctrl_pkg;
   typedef struct packed {
     logic        enable;
     logic        polarity;
+    logic        disabled_level_pda;
+    logic        disabled_level_pcl;
     logic [31:0] prediv;
     logic [63:0] data;
     logic [5:0]  len;
