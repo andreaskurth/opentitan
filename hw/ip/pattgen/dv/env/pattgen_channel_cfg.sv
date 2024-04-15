@@ -11,6 +11,8 @@ class pattgen_channel_cfg extends uvm_object;
   bit                enable;
 
   rand bit           polarity;
+  rand bit           disabled_level_pda;
+  rand bit           disabled_level_pcl;
   rand bit [31:0]    prediv;
   rand bit [63:0]    data;
   rand bit [5:0]     len;
@@ -21,27 +23,31 @@ class pattgen_channel_cfg extends uvm_object;
     stop     = 1'b0;
     enable   = 1'b0;
     if (kind == "HARD") begin
-      polarity = 1'b0;
-      len      = 0;
-      reps     = 0;
-      prediv   = 0;
-      data     = 0;
+      polarity           = 1'b0;
+      disabled_level_pda = 1'b0;
+      disabled_level_pcl = 1'b0;
+      len                = 0;
+      reps               = 0;
+      prediv             = 0;
+      data               = 0;
     end
   endfunction : reset_channel_config
 
   virtual function string convert2string();
       string str;
 
-      str = {str, $sformatf("  start     %b\n",  start)};
-      str = {str, $sformatf("  stop      %b\n",  stop)};
-      str = {str, $sformatf("  enable    %b\n",  enable)};
-      str = {str, $sformatf("  polarity  %b\n",  polarity)};
-      str = {str, $sformatf("  prediv    %0d\n", prediv)};
-      str = {str, $sformatf("  len       %0d\n", len)};
-      str = {str, $sformatf("  reps      %0d\n", reps)};
-      str = {str, $sformatf("  data[0]   %0d\n", data[31:0])};
-      str = {str, $sformatf("  data[1]   %0d\n", data[63:32])};
-      str = {str, $sformatf("  patt_len  %0d",   (len + 1) * (reps + 1))};
+      str = {str, $sformatf("  start               %b\n",  start)};
+      str = {str, $sformatf("  stop                %b\n",  stop)};
+      str = {str, $sformatf("  enable              %b\n",  enable)};
+      str = {str, $sformatf("  polarity            %b\n",  polarity)};
+      str = {str, $sformatf("  disabled_level_pda  %b\n",  disabled_level_pda)};
+      str = {str, $sformatf("  disabled_level_pcl  %b\n",  disabled_level_pcl)};
+      str = {str, $sformatf("  prediv              %0d\n", prediv)};
+      str = {str, $sformatf("  len                 %0d\n", len)};
+      str = {str, $sformatf("  reps                %0d\n", reps)};
+      str = {str, $sformatf("  data[0]             %0d\n", data[31:0])};
+      str = {str, $sformatf("  data[1]             %0d\n", data[63:32])};
+      str = {str, $sformatf("  patt_len            %0d",   (len + 1) * (reps + 1))};
       return str;
   endfunction : convert2string
 

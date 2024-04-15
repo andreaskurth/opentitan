@@ -2,7 +2,7 @@
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
-class pattgen_scoreboard extends cip_base_scoreboard #(
+class pattgen_scoreboard extends cip_base_scoreboard #( // TODO
     .CFG_T(pattgen_env_cfg),
     .RAL_T(pattgen_reg_block),
     .COV_T(pattgen_env_cov)
@@ -106,6 +106,14 @@ class pattgen_scoreboard extends cip_base_scoreboard #(
           channel_cfg[1].enable   = bit'(get_field_val(ral.ctrl.enable_ch1,   reg_value));
           channel_cfg[0].polarity = bit'(get_field_val(ral.ctrl.polarity_ch0, reg_value));
           channel_cfg[1].polarity = bit'(get_field_val(ral.ctrl.polarity_ch1, reg_value));
+          channel_cfg[0].disabled_level_pcl = bit'(get_field_val(ral.ctrl.disabled_level_pcl_ch0,
+                                                                 reg_value));
+          channel_cfg[0].disabled_level_pda = bit'(get_field_val(ral.ctrl.disabled_level_pda_ch0,
+                                                                 reg_value));
+          channel_cfg[1].disabled_level_pcl = bit'(get_field_val(ral.ctrl.disabled_level_pcl_ch1,
+                                                                 reg_value));
+          channel_cfg[1].disabled_level_pda = bit'(get_field_val(ral.ctrl.disabled_level_pda_ch1,
+                                                                 reg_value));
           `uvm_info(`gfn, $sformatf("\n  scb: ctrl reg %b", reg_value[3:0]), UVM_DEBUG);
           for (uint i = 0; i < NUM_PATTGEN_CHANNELS; i++) begin
             // channel is started
@@ -217,6 +225,7 @@ class pattgen_scoreboard extends cip_base_scoreboard #(
       if (!error_injected) begin
         pattgen_item exp_item;
         exp_item = pattgen_item::type_id::create("exp_item");
+        exp_item.data_q.push_back(channel_cfg[channel]). // TODO
         // see the specification document, the effective values of prediv, len, and reps
         // are incremented from the coresponding register values
         for (uint r = 0; r <= channel_cfg[channel].reps; r++) begin

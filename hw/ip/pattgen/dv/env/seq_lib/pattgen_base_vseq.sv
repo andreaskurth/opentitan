@@ -113,6 +113,8 @@ class pattgen_base_vseq extends cip_base_vseq #(
       csr_wr(.ptr(ral.data_ch0[0]), .value(channel_cfg[0].data[31:0]));
       csr_wr(.ptr(ral.data_ch0[1]), .value(channel_cfg[0].data[63:32]));
       ral.ctrl.polarity_ch0.set(channel_cfg[0].polarity);
+      ral.ctrl.disabled_level_pda_ch0.set(channel_cfg[0].disabled_level_pda);
+      ral.ctrl.disabled_level_pcl_ch0.set(channel_cfg[0].disabled_level_pcl);
       update_pattgen_agent_cfg(.channel(0));
       csr_update(ral.ctrl);
       channel_setup[0] = 1'b1;
@@ -135,6 +137,8 @@ class pattgen_base_vseq extends cip_base_vseq #(
       csr_wr(.ptr(ral.data_ch1[0]), .value(channel_cfg[1].data[31:0]));
       csr_wr(.ptr(ral.data_ch1[1]), .value(channel_cfg[1].data[63:32]));
       ral.ctrl.polarity_ch1.set(channel_cfg[1].polarity);
+      ral.ctrl.disabled_level_pda_ch1.set(channel_cfg[1].disabled_level_pda);
+      ral.ctrl.disabled_level_pcl_ch1.set(channel_cfg[1].disabled_level_pcl);
       update_pattgen_agent_cfg(.channel(1));
       csr_update(ral.ctrl);
       channel_setup[1] = 1'b1;
