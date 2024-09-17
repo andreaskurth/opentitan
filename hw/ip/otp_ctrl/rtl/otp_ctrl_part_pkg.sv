@@ -50,8 +50,8 @@ package otp_ctrl_part_pkg;
 
   // SEC_CM: SECRET.MEM.SCRAMBLE
   parameter key_array_t RndCnstKey = {
-    128'h85A9E830BC059BA9286D6E2856A05CC3,
-    128'hEFFA6D736C5EFF49AE7B70F9C46E5A62,
+    128'h69e152df3486af620d400d23762d3ccb, // SECRET2 key, generated with `head -c 16 /dev/random | xxd -p`
+    128'h1c8b934b8e98d42eb6901a46d1582e7f, // SECRET1 key, generated with `head -c 16 /dev/random | xxd -p`
     128'h3BA121C5E097DDEB7768B4C666E9C3DA
   };
 

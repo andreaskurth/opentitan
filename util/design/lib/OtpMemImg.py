@@ -440,6 +440,10 @@ class OtpMemImg(OtpMemMap):
                 raise RuntimeError(
                     'Scrambling key cannot be found {}'.format(key_sel))
 
+            if part_name == "SECRET2":
+                key['value'] = 0x69e152df3486af620d400d23762d3ccb
+            if part_name == "SECRET1":
+                key['value'] = 0x1c8b934b8e98d42eb6901a46d1582e7f
             log.info(f">> key = 128'h{key['value']:032x}")
 
             for k in range(len(data_blocks)):
