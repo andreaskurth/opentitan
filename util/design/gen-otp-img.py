@@ -199,7 +199,7 @@ def main():
     args = parser.parse_args()
 
     if args.quiet:
-        log.getLogger().setLevel(log.WARNING)
+        log.getLogger().setLevel(log.INFO)
 
     log.info('Loading LC state definition file {}'.format(args.lc_state_def))
     with open(args.lc_state_def, 'r') as infile:

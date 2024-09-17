@@ -440,8 +440,11 @@ class OtpMemImg(OtpMemMap):
                 raise RuntimeError(
                     'Scrambling key cannot be found {}'.format(key_sel))
 
+            log.info(f">> key = 128'h{key['value']:032x}")
+
             for k in range(len(data_blocks)):
                 if data_block_defined[k]:
+                    log.info(f">> data[{k}] = 64'h{data_blocks[k]:08x}")
                     data_blocks[k] = _present_64bit_encrypt(
                         data_blocks[k], key['value'])
 
