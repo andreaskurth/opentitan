@@ -2,31 +2,31 @@ CAPI=2:
 # Copyright lowRISC contributors (OpenTitan project).
 # Licensed under the Apache License, Version 2.0, see LICENSE for details.
 # SPDX-License-Identifier: Apache-2.0
-name: "lowrisc:ip:pwrmgr_component:0.1" # TODO: needs templating
-description: "Power manager RTL"
+name: ${instance_vlnv("lowrisc:ip:alert_handler_component:0.1")}
+description: "Alert Handler component without the CSRs"
 
 filesets:
   files_rtl:
     depend:
       - lowrisc:ip:tlul
-      - lowrisc:prim:esc
-      - lowrisc:prim:lc_sync
-      - lowrisc:prim:lc_sender
       - lowrisc:prim:all
-      - lowrisc:ip:rom_ctrl_pkg
-      - lowrisc:ip:lc_ctrl_pkg
-      - lowrisc:prim:sparse_fsm
+      - lowrisc:prim:esc
+      - lowrisc:prim:double_lfsr
+      - lowrisc:prim:count
+      - lowrisc:prim:edn_req
+      - lowrisc:prim:buf
       - lowrisc:prim:mubi
-      - lowrisc:prim:clock_buf
-      - lowrisc:prim:measure
+      - lowrisc:prim:sparse_fsm
       - lowrisc:ip_interfaces:alert_handler_reg
-      - lowrisc:ip_interfaces:pwrmgr_pkg
     files:
-      - rtl/pwrmgr_cdc.sv
-      - rtl/pwrmgr_slow_fsm.sv
-      - rtl/pwrmgr_fsm.sv
-      - rtl/pwrmgr_wake_info.sv
-      - rtl/pwrmgr.sv
+      - rtl/alert_pkg.sv
+      - rtl/alert_handler_reg_wrap.sv
+      - rtl/alert_handler_lpg_ctrl.sv
+      - rtl/alert_handler_class.sv
+      - rtl/alert_handler_ping_timer.sv
+      - rtl/alert_handler_esc_timer.sv
+      - rtl/alert_handler_accu.sv
+      - rtl/alert_handler.sv
     file_type: systemVerilogSource
 
   files_verilator_waiver:
@@ -35,7 +35,7 @@ filesets:
       - lowrisc:lint:common
       - lowrisc:lint:comportable
     files:
-      - lint/pwrmgr.vlt
+      - lint/alert_handler.vlt
     file_type: vlt
 
   files_ascentlint_waiver:
@@ -44,7 +44,7 @@ filesets:
       - lowrisc:lint:common
       - lowrisc:lint:comportable
     files:
-      - lint/pwrmgr.waiver
+      - lint/alert_handler.waiver
     file_type: waiver
 
   files_veriblelint_waiver:
@@ -52,11 +52,6 @@ filesets:
       # common waivers
       - lowrisc:lint:common
       - lowrisc:lint:comportable
-
-parameters:
-  SYNTHESIS:
-    datatype: bool
-    paramtype: vlogdefine
 
 
 targets:
@@ -66,15 +61,3 @@ targets:
       - tool_ascentlint  ? (files_ascentlint_waiver)
       - tool_veriblelint ? (files_veriblelint_waiver)
       - files_rtl
-    toplevel: pwrmgr
-
-  lint:
-    <<: *default_target
-    default_tool: verilator
-    parameters:
-      - SYNTHESIS=true
-    tools:
-      verilator:
-        mode: lint-only
-        verilator_options:
-          - "-Wall"

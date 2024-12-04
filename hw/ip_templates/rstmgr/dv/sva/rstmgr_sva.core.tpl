@@ -2,38 +2,34 @@ CAPI=2:
 # Copyright lowRISC contributors (OpenTitan project).
 # Licensed under the Apache License, Version 2.0, see LICENSE for details.
 # SPDX-License-Identifier: Apache-2.0
-name: "lowrisc:fpv:pinmux_fpv:0.1" # TODO: needs templating
-description: "pinmux FPV target"
+name: ${instance_vlnv("lowrisc:dv:rstmgr_sva:0.1")}
+description: "RSTMGR assertion modules and bind file."
 filesets:
-  files_formal:
+  files_dv:
     depend:
-      - lowrisc:prim:all
-      - lowrisc:ip:tlul
-      - lowrisc:ip_interfaces:pinmux
+      - lowrisc:prim:mubi
+      - lowrisc:ip_interfaces:rstmgr_pkg
       - lowrisc:fpv:csr_assert_gen
-      - lowrisc:fpv:pinmux_common_fpv # TODO: needs templating
-      - lowrisc:systems:scan_role_pkg
+      - ${instance_vlnv("lowrisc:dv:rstmgr_sva_ifs:0.1")}
+
     files:
-      - tb/pinmux_tb.sv
+      - rstmgr_bind.sv
     file_type: systemVerilogSource
 
 generate:
   csr_assert_gen:
     generator: csr_assert_gen
     parameters:
-      spec: ../data/pinmux.hjson
+      spec: ../../data/rstmgr.hjson
 
 targets:
   default: &default_target
-    default_tool: icarus
     filesets:
-      - files_formal
+      - files_dv
     generate:
       - csr_assert_gen
-    toplevel: pinmux_tb
-
   formal:
     <<: *default_target
-
-  lint:
-    <<: *default_target
+    filesets:
+      - files_dv
+    toplevel: rstmgr

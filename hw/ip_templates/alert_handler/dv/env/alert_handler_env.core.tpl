@@ -9,7 +9,7 @@ filesets:
     depend:
       - lowrisc:dv:ralgen
       - lowrisc:dv:cip_lib
-      - lowrisc:ip:alert_handler_component  # import alert_pkg
+      - ${instance_vlnv("lowrisc:ip:alert_handler_component:0.1")}  # import alert_pkg
       - lowrisc:prim:mubi  # import prim_mubi_pkg
     files:
       - alert_handler_env_pkg.sv

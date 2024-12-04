@@ -2,39 +2,38 @@ CAPI=2:
 # Copyright lowRISC contributors (OpenTitan project).
 # Licensed under the Apache License, Version 2.0, see LICENSE for details.
 # SPDX-License-Identifier: Apache-2.0
-name: "lowrisc:dv:clkmgr_sva:0.1" # TODO: needs templating
-description: "CLKMGR assertion modules and bind file."
+name: "lowrisc:fpv:top_${topname}_pinmux_fpv:0.1"
+description: "pinmux FPV target"
 filesets:
-  files_dv:
-    depend:
-      - lowrisc:tlul:headers
-      - lowrisc:fpv:csr_assert_gen
-      - lowrisc:dv:clkmgr_sva_ifs # TODO: needs templating
-    files:
-      - clkmgr_bind.sv
-      - clkmgr_sec_cm_checker_assert.sv
-    file_type: systemVerilogSource
-
   files_formal:
     depend:
-      - lowrisc:ip_interfaces:clkmgr
+      - lowrisc:prim:all
+      - lowrisc:ip:tlul
+      - lowrisc:ip_interfaces:pinmux
+      - lowrisc:fpv:csr_assert_gen
+      - lowrisc:fpv:top_${topname}_pinmux_common_fpv
+      - lowrisc:systems:scan_role_pkg
+    files:
+      - tb/pinmux_tb.sv
+    file_type: systemVerilogSource
 
 generate:
   csr_assert_gen:
     generator: csr_assert_gen
     parameters:
-      spec: ../../data/clkmgr.hjson
+      spec: ../data/pinmux.hjson
 
 targets:
   default: &default_target
+    default_tool: icarus
     filesets:
-      - files_dv
+      - files_formal
     generate:
       - csr_assert_gen
+    toplevel: pinmux_tb
 
   formal:
     <<: *default_target
-    filesets:
-      - files_formal
-      - files_dv
-    toplevel: clkmgr
+
+  lint:
+    <<: *default_target

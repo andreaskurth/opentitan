@@ -2,15 +2,15 @@ CAPI=2:
 # Copyright lowRISC contributors (OpenTitan project).
 # Licensed under the Apache License, Version 2.0, see LICENSE for details.
 # SPDX-License-Identifier: Apache-2.0
-name: "lowrisc:dv:alert_handler_cov" # TODO: needs templating
-description: "ALERT_HANDLER cov bind files"
+name: ${instance_vlnv("lowrisc:dv:clkmgr_test:0.1")}
+description: "CLKMGR DV UVM test"
 filesets:
   files_dv:
     depend:
-      - lowrisc:ip:alert_handler_component  # import alert_pkg # TODO: needs templating
-      - lowrisc:dv:dv_utils
+      - ${instance_vlnv("lowrisc:dv:clkmgr_env:0.1")}
     files:
-      - alert_handler_cov_bind.sv
+      - clkmgr_test_pkg.sv
+      - clkmgr_base_test.sv: {is_include_file: true}
     file_type: systemVerilogSource
 
 targets:

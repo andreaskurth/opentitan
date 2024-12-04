@@ -2,7 +2,7 @@ CAPI=2:
 # Copyright lowRISC contributors (OpenTitan project).
 # Licensed under the Apache License, Version 2.0, see LICENSE for details.
 # SPDX-License-Identifier: Apache-2.0
-name: "lowrisc:dv:pwrmgr_sim:0.1" # TODO: needs templating
+name: ${instance_vlnv("lowrisc:dv:pwrmgr_sim:0.1")}
 description: "PWRMGR DV sim target"
 filesets:
   files_rtl:
@@ -10,9 +10,9 @@ filesets:
       - lowrisc:ip_interfaces:pwrmgr
   files_dv:
     depend:
-      - lowrisc:dv:pwrmgr_test # TODO: needs templating
-      - lowrisc:dv:pwrmgr_sva # TODO: needs templating
-      - lowrisc:dv:pwrmgr_unit_only_sva # TODO: needs templating
+      - ${instance_vlnv("lowrisc:dv:pwrmgr_test:0.1")}
+      - ${instance_vlnv("lowrisc:dv:pwrmgr_sva:0.1")}
+      - ${instance_vlnv("lowrisc:dv:pwrmgr_unit_only_sva:0.1")}
     files:
       - tb.sv
       - cov/pwrmgr_cov_bind.sv
