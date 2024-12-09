@@ -10,7 +10,7 @@ filesets:
       - lowrisc:tlul:headers
       - lowrisc:fpv:csr_assert_gen
       - lowrisc:ip_interfaces:pwrmgr_pkg
-      - lowrisc:opentitan:top_darjeeling_pwrmgrclkmgr_pwrmgr_sva_if:0.1
+      - lowrisc:opentitan:top_darjeeling_clkmgr_pwrmgr_sva_if:0.1
       - lowrisc:opentitan:top_darjeeling_pwrmgr_rstmgr_sva_if:0.1
     files:
       - pwrmgr_bind.sv
