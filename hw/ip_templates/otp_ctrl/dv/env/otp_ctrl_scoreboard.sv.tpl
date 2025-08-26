@@ -301,8 +301,19 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
       // Update status bits.
       foreach (FATAL_EXP_STATUS[i]) begin
         if (FATAL_EXP_STATUS[i]) begin
-          predict_err(.status_err_idx(otp_status_e'(i)), .err_code(OtpFsmStateError),
-                      .update_esc_err(1));
+          // The first error entries are for partitions (one per partition); the error entries after
+          // the partitions are for DAI and LCI.
+          if (i < NumPart) begin
+            predict_err(.status_err_idx(OtpPartitionErrIdx),
+                        .partition_idx(otp_partition_e'(i)),
+                        .err_code(OtpFsmStateError),
+                        .update_esc_err(1));
+          end else begin
+            predict_err(.status_err_idx(otp_status_e'(i - NumPart + 1)),
+                        .partition_idx(0),
+                        .err_code(OtpFsmStateError),
+                        .update_esc_err(1));
+          end
         end
       end
 
@@ -349,7 +360,7 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
         else                                         exp_err_bit = 1;
       end
 
-      if (exp_err_bit) predict_err(OtpLciErrIdx, OtpMacroWriteBlankError);
+      if (exp_err_bit) predict_err(OtpLciErrIdx, 0, OtpMacroWriteBlankError);
       else             predict_no_err(OtpLciErrIdx);
 
       // LC program request data is valid means no OTP macro error.
@@ -613,7 +624,7 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
         // ECC uncorrectable errors are gated by `is_tl_mem_access_allowed` function.
         if (ecc_err != OtpNoEccErr && part_has_integrity(part_idx)) begin
 
-          predict_err(otp_status_e'(part_idx), OtpMacroEccCorrError);
+          predict_err(OtpPartitionErrIdx, otp_partition_e'(part_idx), OtpMacroEccCorrError);
           if (ecc_err == OtpEccCorrErr) begin
              `DV_CHECK_EQ(item.d_data, otp_a[otp_addr],
                          $sformatf("mem read mismatch at TLUL addr %0h, csr_addr %0h",
@@ -728,7 +739,7 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
 
           // LC partition cannot be access via DAI
           if (part_idx == LifeCycleIdx) begin
-            predict_err(OtpDaiErrIdx, OtpAccessError);
+            predict_err(OtpDaiErrIdx, 0, OtpAccessError);
             if (item.a_data == DaiRead) predict_rdata(is_secret(dai_addr), 0, 0);
           end else begin
             // Collect coverage.
@@ -762,7 +773,7 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
                     // disable, then return access error.
                     (PartInfo[part_idx].iskeymgr_creator && !is_digest(dai_addr) &&
                      cfg.otp_ctrl_vif.lc_creator_seed_sw_rw_en_i != lc_ctrl_pkg::On)) begin
-                  predict_err(OtpDaiErrIdx, OtpAccessError);
+                  predict_err(OtpDaiErrIdx, 0, OtpAccessError);
                   predict_rdata(is_secret(dai_addr) || is_digest(dai_addr), 0, 0);
                 end else if (sw_read_lock ||
                     // Secret partitions cal digest can also lock read access.
@@ -773,7 +784,7 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
                     // then return access error.
                     (PartInfo[part_idx].iskeymgr_owner && !is_digest(dai_addr) &&
                      cfg.otp_ctrl_vif.lc_owner_seed_sw_rw_en_i != lc_ctrl_pkg::On)) begin
-                  predict_err(OtpDaiErrIdx, OtpAccessError);
+                  predict_err(OtpDaiErrIdx, 0, OtpAccessError);
                   predict_rdata(is_secret(dai_addr) || is_digest(dai_addr), 0, 0);
 
                 end else begin
@@ -795,12 +806,12 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
                   end
 
                   if (ecc_err == OtpEccCorrErr && part_has_integrity(part_idx)) begin
-                    predict_err(OtpDaiErrIdx, OtpMacroEccCorrError);
+                    predict_err(OtpDaiErrIdx, 0, OtpMacroEccCorrError);
                     backdoor_update_otp_array(dai_addr);
                     predict_rdata(is_secret(dai_addr) || is_digest(dai_addr),
                                   otp_a[otp_addr], otp_a[otp_addr+1]);
                   end else if (ecc_err == OtpEccUncorrErr && part_has_integrity(part_idx)) begin
-                    predict_err(OtpDaiErrIdx, OtpMacroEccUncorrError);
+                    predict_err(OtpDaiErrIdx, 0, OtpMacroEccUncorrError);
                     // Max wait 20 clock cycles because scb did not know when exactly OTP will
                     // finish reading and reporting the uncorrectable error.
                     set_exp_alert("fatal_macro_error", 1, 20);
@@ -835,11 +846,11 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
                 if (is_write_locked || (PartInfo[part_idx].iskeymgr_creator &&
                     !is_digest(dai_addr) &&
                     cfg.otp_ctrl_vif.lc_creator_seed_sw_rw_en_i != lc_ctrl_pkg::On)) begin
-                  predict_err(OtpDaiErrIdx, OtpAccessError);
+                  predict_err(OtpDaiErrIdx, 0, OtpAccessError);
                 end else if (is_write_locked || (PartInfo[part_idx].iskeymgr_owner &&
                              !is_digest(dai_addr) &&
                              cfg.otp_ctrl_vif.lc_owner_seed_sw_rw_en_i != lc_ctrl_pkg::On)) begin
-                  predict_err(OtpDaiErrIdx, OtpAccessError);
+                  predict_err(OtpDaiErrIdx, 0, OtpAccessError);
                 end else begin
                   predict_no_err(OtpDaiErrIdx);
                   // write digest
@@ -853,10 +864,10 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
                     if ((prev_digest & curr_digest) == prev_digest) begin
                       update_digest_to_otp(part_idx, curr_digest);
                     end else begin
-                      predict_err(OtpDaiErrIdx, OtpMacroWriteBlankError);
+                      predict_err(OtpDaiErrIdx, 0, OtpMacroWriteBlankError);
                     end
                   end else if (is_digest(dai_addr)) begin
-                    predict_err(OtpDaiErrIdx, OtpAccessError);
+                    predict_err(OtpDaiErrIdx, 0, OtpAccessError);
                   // write OTP memory
                   end else begin
                     dai_wr_ip = 1;
@@ -867,7 +878,7 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
                         otp_a[otp_addr] = wr_data;
                         check_otp_idle(.val(0), .wait_clks(3));
                       end else begin
-                        predict_err(OtpDaiErrIdx, OtpMacroWriteBlankError);
+                        predict_err(OtpDaiErrIdx, 0, OtpMacroWriteBlankError);
                       end
                     end else begin
                       bit [SCRAMBLE_DATA_SIZE-1:0] secret_data = {otp_a[otp_addr + 1],
@@ -882,7 +893,7 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
                         // wait until secret scrambling is done
                         check_otp_idle(.val(0), .wait_clks(34));
                       end else begin
-                        predict_err(OtpDaiErrIdx, OtpMacroWriteBlankError);
+                        predict_err(OtpDaiErrIdx, 0, OtpMacroWriteBlankError);
                       end
                     end
                   end
@@ -968,16 +979,16 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
           under_chk = 1;
           if (check_timeout <= CHK_TIMEOUT_CYC) begin
             set_exp_alert("fatal_check_error", 1, `gmv(ral.check_timeout) + CHK_TIMEOUT_SLACK);
-            predict_err(OtpTimeoutErrIdx);
+            predict_err(OtpTimeoutErrIdx, 0);
           end else begin
             if (get_field_val(ral.check_trigger.consistency, item.a_data)) begin
               foreach (cfg.ecc_chk_err[i]) begin
                 if (cfg.ecc_chk_err[i] == OtpEccCorrErr && part_has_integrity(i)) begin
-                  predict_err(otp_status_e'(i), OtpMacroEccCorrError);
+                  predict_err(OtpPartitionErrIdx, otp_partition_e'(i), OtpMacroEccCorrError);
                 end else if (cfg.ecc_chk_err[i] == OtpEccUncorrErr &&
                              part_has_integrity(i)) begin
                   set_exp_alert("fatal_macro_error", 1, 40_000);
-                  predict_err(otp_status_e'(i), OtpMacroEccUncorrError);
+                  predict_err(OtpPartitionErrIdx, otp_partition_e'(i), OtpMacroEccUncorrError);
                 end
               end
             end
@@ -1216,15 +1227,15 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
     if (cfg.otp_ctrl_vif.under_error_states()) return;
 
     if (!part_has_hw_digest(part_idx) || get_digest_reg_val(part_idx) != 0) begin
-      predict_err(OtpDaiErrIdx, OtpAccessError);
+      predict_err(OtpDaiErrIdx, 0, OtpAccessError);
       return;
     end else if (PartInfo[part_idx].iskeymgr_creator &&
                  cfg.otp_ctrl_vif.lc_creator_seed_sw_rw_en_i != lc_ctrl_pkg::On) begin
-      predict_err(OtpDaiErrIdx, OtpAccessError);
+      predict_err(OtpDaiErrIdx, 0, OtpAccessError);
       return;
     end else if (PartInfo[part_idx].iskeymgr_owner &&
                  cfg.otp_ctrl_vif.lc_owner_seed_sw_rw_en_i != lc_ctrl_pkg::On) begin
-      predict_err(OtpDaiErrIdx, OtpAccessError);
+      predict_err(OtpDaiErrIdx, 0, OtpAccessError);
       return;
     end else begin
       predict_no_err(OtpDaiErrIdx);
@@ -1299,10 +1310,12 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
     get_scb_otp_addr = normalize_dai_addr(dai_addr) >> 2;
   endfunction
 
-  // This function predict OTP error related registers: intr_state, status, and err_code
-  virtual function void predict_err(otp_status_e   status_err_idx,
-                                    otp_err_code_e err_code = OtpNoError,
-                                    bit            update_esc_err = 0);
+  // This function predicts OTP error related registers: intr_state, status, and err_code.
+  // The partition_idx argument is only considered if status_err_idx == `OtpPartitionErrIdx`.
+  virtual function void predict_err(otp_status_e    status_err_idx,
+                                    otp_partition_e partition_idx,
+                                    otp_err_code_e  err_code = OtpNoError,
+                                    bit             update_esc_err = 0);
     if (cfg.otp_ctrl_vif.under_error_states() && !update_esc_err) return;
 
     // Update intr_state
@@ -1310,13 +1323,19 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
     // Update status
     exp_status[status_err_idx] = 1;
 
-    // Only first status errors up to the LCI have corresponding err_code
-    if (status_err_idx <= OtpLciErrIdx) begin
+    // Only partitions, LCI, and DAI have an err_code.
+    if (status_err_idx inside {OtpPartitionErrIdx, OtpDaiErrIdx, OtpLciErrIdx}) begin
       dv_base_reg_field err_code_flds[$];
+      int err_code_idx;
       if (err_code == OtpNoError) begin
         `uvm_error(`gfn, $sformatf("please set status error: %0s error code", status_err_idx.name))
       end
-      ral.err_code[status_err_idx].get_dv_base_reg_fields(err_code_flds);
+      if (status_err_idx == OtpPartitionErrIdx) begin
+        err_code_idx = partition_idx;
+      end else begin
+        err_code_idx = NumPart - 1 + status_err_idx;
+      end
+      ral.err_code[err_code_idx].get_dv_base_reg_fields(err_code_flds);
 
       if (`gmv(err_code_flds[0]) inside {OTP_TERMINAL_ERRS}) begin
         `uvm_info(`gfn, "terminal error cannot be updated", UVM_HIGH)
@@ -1423,7 +1442,7 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
             [cfg.ral_models[ral_name].mem_ranges[0].start_addr + ${part_name_camel}Offset :
              cfg.ral_models[ral_name].mem_ranges[0].start_addr + ${part_name_camel}Offset +
              ${part_name_camel}Size - 1]}) begin
-          predict_err(Otp${part_name_camel}ErrIdx, OtpAccessError);
+          predict_err(OtpPartitionErrIdx, Otp${part_name_camel}Idx, OtpAccessError);
           custom_err = 1;
           if (cfg.en_cov) begin
   % if part["write_lock"] == "Digest":
@@ -1447,7 +1466,7 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
         bit [TL_DW-1:0] read_out;
         int ecc_err = read_a_word_with_ecc(dai_addr, read_out);
         if (ecc_err == OtpEccUncorrErr && part_has_integrity(part_idx)) begin
-           predict_err(otp_status_e'(part_idx), OtpMacroEccUncorrError);
+           predict_err(OtpPartitionErrIdx, otp_partition_e'(part_idx), OtpMacroEccUncorrError);
            set_exp_alert("fatal_macro_error", 1, 20);
            custom_err = 1;
            return 0;
