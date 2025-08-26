@@ -121,18 +121,8 @@ package otp_ctrl_env_pkg;
     NumOtpCtrlIntr
   } otp_intr_e;
 
-  typedef enum bit [5:0] {
-    OtpVendorTestErrIdx,
-    OtpCreatorSwCfgErrIdx,
-    OtpOwnerSwCfgErrIdx,
-    OtpRotCreatorAuthCodesignErrIdx,
-    OtpRotCreatorAuthStateErrIdx,
-    OtpHwCfg0ErrIdx,
-    OtpHwCfg1ErrIdx,
-    OtpSecret0ErrIdx,
-    OtpSecret1ErrIdx,
-    OtpSecret2ErrIdx,
-    OtpLifeCycleErrIdx,
+  typedef enum bit [4:0] {
+    OtpPartitionErrIdx,
     OtpDaiErrIdx,
     OtpLciErrIdx,
     OtpTimeoutErrIdx,
@@ -144,6 +134,20 @@ package otp_ctrl_env_pkg;
     OtpCheckPendingIdx,
     OtpStatusFieldSize
   } otp_status_e;
+
+  typedef enum bit [4:0] {
+    OtpVendorTestErrIdx,
+    OtpCreatorSwCfgErrIdx,
+    OtpOwnerSwCfgErrIdx,
+    OtpRotCreatorAuthCodesignErrIdx,
+    OtpRotCreatorAuthStateErrIdx,
+    OtpHwCfg0ErrIdx,
+    OtpHwCfg1ErrIdx,
+    OtpSecret0ErrIdx,
+    OtpSecret1ErrIdx,
+    OtpSecret2ErrIdx,
+    OtpLifeCycleErrIdx
+  } otp_partition_status_0_e;
 
   typedef enum bit [2:0] {
     OtpNoError,
