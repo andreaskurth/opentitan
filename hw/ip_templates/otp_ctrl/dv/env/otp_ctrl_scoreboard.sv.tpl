@@ -1349,7 +1349,7 @@ class otp_ctrl_scoreboard #(type CFG_T = otp_ctrl_env_cfg)
 
   endfunction
 
-  virtual function void predict_no_err(otp_status_e status_err_idx);
+  virtual function void predict_no_err(otp_status_e status_err_idx); // TODO
     if (cfg.otp_ctrl_vif.under_error_states()) return;
 
     exp_status[status_err_idx] = 0;
