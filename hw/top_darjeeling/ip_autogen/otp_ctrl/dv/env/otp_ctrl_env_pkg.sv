@@ -166,30 +166,30 @@ package otp_ctrl_env_pkg;
     OtpStatusFieldSize
   } otp_status_e;
 
-  typedef enum bit [4:0] {
-    OtpVendorTestErrIdx,
-    OtpCreatorSwCfgErrIdx,
-    OtpOwnerSwCfgErrIdx,
-    OtpOwnershipSlotStateErrIdx,
-    OtpRotCreatorAuthErrIdx,
-    OtpRotOwnerAuthSlot0ErrIdx,
-    OtpRotOwnerAuthSlot1ErrIdx,
-    OtpPlatIntegAuthSlot0ErrIdx,
-    OtpPlatIntegAuthSlot1ErrIdx,
-    OtpPlatOwnerAuthSlot0ErrIdx,
-    OtpPlatOwnerAuthSlot1ErrIdx,
-    OtpPlatOwnerAuthSlot2ErrIdx,
-    OtpPlatOwnerAuthSlot3ErrIdx,
-    OtpExtNvmErrIdx,
-    OtpRomPatchErrIdx,
-    OtpHwCfg0ErrIdx,
-    OtpHwCfg1ErrIdx,
-    OtpSecret0ErrIdx,
-    OtpSecret1ErrIdx,
-    OtpSecret2ErrIdx,
-    OtpSecret3ErrIdx,
-    OtpLifeCycleErrIdx
-  } otp_partition_status_0_e;
+  typedef enum int {
+    OtpVendorTestIdx,
+    OtpCreatorSwCfgIdx,
+    OtpOwnerSwCfgIdx,
+    OtpOwnershipSlotStateIdx,
+    OtpRotCreatorAuthIdx,
+    OtpRotOwnerAuthSlot0Idx,
+    OtpRotOwnerAuthSlot1Idx,
+    OtpPlatIntegAuthSlot0Idx,
+    OtpPlatIntegAuthSlot1Idx,
+    OtpPlatOwnerAuthSlot0Idx,
+    OtpPlatOwnerAuthSlot1Idx,
+    OtpPlatOwnerAuthSlot2Idx,
+    OtpPlatOwnerAuthSlot3Idx,
+    OtpExtNvmIdx,
+    OtpRomPatchIdx,
+    OtpHwCfg0Idx,
+    OtpHwCfg1Idx,
+    OtpSecret0Idx,
+    OtpSecret1Idx,
+    OtpSecret2Idx,
+    OtpSecret3Idx,
+    OtpLifeCycleIdx
+  } otp_partition_e;
 
   typedef enum bit [2:0] {
     OtpNoError,

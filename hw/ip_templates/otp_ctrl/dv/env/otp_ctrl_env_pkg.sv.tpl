@@ -141,16 +141,14 @@ package otp_ctrl_env_pkg;
     OtpStatusFieldSize
   } otp_status_e;
 
-% for r in range(int(math.ceil(len(otp_mmap["partitions"]) / 32))):
-  typedef enum bit [4:0] {
-  % for part in otp_mmap["partitions"][r*32 : (r+1)*32]:
+  typedef enum int {
+  % for part in otp_mmap["partitions"]:
 <%
   part_name_camel = Name.to_camel_case(part["name"])
 %>\
-    Otp${part_name_camel}ErrIdx${"" if loop.last else ","}
+    Otp${part_name_camel}Idx${"" if loop.last else ","}
   % endfor
-  } otp_partition_status_${r}_e;
-% endfor
+  } otp_partition_e;
 
   typedef enum bit [2:0] {
     OtpNoError,

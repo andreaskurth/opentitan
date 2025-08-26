@@ -135,19 +135,19 @@ package otp_ctrl_env_pkg;
     OtpStatusFieldSize
   } otp_status_e;
 
-  typedef enum bit [4:0] {
-    OtpVendorTestErrIdx,
-    OtpCreatorSwCfgErrIdx,
-    OtpOwnerSwCfgErrIdx,
-    OtpRotCreatorAuthCodesignErrIdx,
-    OtpRotCreatorAuthStateErrIdx,
-    OtpHwCfg0ErrIdx,
-    OtpHwCfg1ErrIdx,
-    OtpSecret0ErrIdx,
-    OtpSecret1ErrIdx,
-    OtpSecret2ErrIdx,
-    OtpLifeCycleErrIdx
-  } otp_partition_status_0_e;
+  typedef enum int {
+    OtpVendorTestIdx,
+    OtpCreatorSwCfgIdx,
+    OtpOwnerSwCfgIdx,
+    OtpRotCreatorAuthCodesignIdx,
+    OtpRotCreatorAuthStateIdx,
+    OtpHwCfg0Idx,
+    OtpHwCfg1Idx,
+    OtpSecret0Idx,
+    OtpSecret1Idx,
+    OtpSecret2Idx,
+    OtpLifeCycleIdx
+  } otp_partition_e;
 
   typedef enum bit [2:0] {
     OtpNoError,
