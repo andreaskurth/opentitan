@@ -19,7 +19,7 @@ filesets:
       # common waivers
       - lowrisc:lint:common
     files:
-      - lint/prim_generic_clock_gating.vlt
+      - lint/prim_asap7_clock_gating.vlt
     file_type: vlt
 
   files_ascentlint_waiver:
@@ -27,7 +27,7 @@ filesets:
       # common waivers
       - lowrisc:lint:common
     files:
-      - lint/prim_generic_clock_gating.waiver
+      - lint/prim_asap7_clock_gating.waiver
     file_type: waiver
 
   files_veriblelint_waiver:
