@@ -5,6 +5,8 @@ CAPI=2:
 
 name: "lowrisc:prim_xilinx:all:0.1"
 description: "Xilinx 7-series prim library"
+virtual:
+  - lowrisc:virtual_prim_tech:all
 
 filesets:
   files_rtl:
@@ -38,6 +40,9 @@ filesets:
 #      - lowrisc:prim_generic:flash
 
 mapping:
+  # Resolves the technology-library dependency of a chip-level core to this
+  # library, so that selecting a library still takes just one --mapping.
+  "lowrisc:virtual_prim_tech:all" : "lowrisc:prim_xilinx:all"
   "lowrisc:prim:prim_pkg"     : lowrisc:prim_xilinx:prim_pkg
   "lowrisc:prim:and2"         : lowrisc:prim_xilinx:and2
   "lowrisc:prim:buf"          : lowrisc:prim_xilinx:buf

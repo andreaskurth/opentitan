@@ -7,6 +7,8 @@ name: "lowrisc:prim_asap7:all"
 description: "OpenSource ASAP7 prim standard cell library: prim_asap7:* modules directly
               instantiate standard cells. Memories and pad cells are not available and map to
               generic implementations"
+virtual:
+  - lowrisc:virtual_prim_tech:all
 
 filesets:
   files_rtl:
@@ -41,6 +43,9 @@ filesets:
 #      - lowrisc:prim_generic:flash
 
 mapping:
+  # Resolves the technology-library dependency of a chip-level core to this
+  # library, so that selecting a library still takes just one --mapping.
+  "lowrisc:virtual_prim_tech:all" : "lowrisc:prim_asap7:all"
   "lowrisc:prim:prim_pkg"     : "lowrisc:prim_asap7:prim_pkg"
   "lowrisc:prim:and2"         : "lowrisc:prim_asap7:and2"
   "lowrisc:prim:buf"          : "lowrisc:prim_asap7:buf"
