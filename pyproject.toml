@@ -65,7 +65,10 @@ dependencies = [
   "fusesoc==2.4.5",
 
   # Build and run tool for Design Verification flows
-  "dvsim==1.34.1",
+  # TEMPORARY: pinned to the fusesoc-mapping feature branch, which adds the
+  # --fusesoc-mapping and --fusesoc-extra-cores-root options.  Revert to a
+  # released version once the feature has landed upstream.
+  "dvsim @ git+https://github.com/andreaskurth/dvsim@fusesoc-mapping",
 
   "peakrdl-systemrdl >= 1.0",
 ]
