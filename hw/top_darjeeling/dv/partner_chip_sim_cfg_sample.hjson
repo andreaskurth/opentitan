@@ -8,11 +8,24 @@
 // to run simulations on a modified design.
 {
   // Import the chip_sim_cfg.hjson to run the chip level simulations.
-  import_cfgs: ["{proj_root}/hw/{top_chip}/dv/chip_sim_cfg.hjson"]
+  import_cfgs: ["{proj_root}/hw/top_darjeeling/dv/chip_sim_cfg.hjson"]
 
-  // Pass the fileset_partner flag to FuseSoC to swap the open source files
-  // with partner implementations.
-  sv_flist_gen_flags: ["--flag=fileset_partner"]
+  // Select a technology library, and any other partner implementation of a
+  // virtual core, by mapping. The chip depends on no technology library of its
+  // own, so this replaces nothing: it decides what the virtual prim cores
+  // resolve to. The second mapping resolves the top-specific cores (AST, pad
+  // orientation, scan roles, JTAG ID).
+  //
+  // The equivalent on the command line, which does not need this file at all, is
+  //
+  //   dvsim --fusesoc-mapping lowrisc:prim_generic:all:0.1=partner:prim_tech:all \
+  //         --fusesoc-extra-cores-root /path/to/prim_tech \
+  //         {proj_root}/hw/top_darjeeling/dv/chip_sim_cfg.hjson
+  //
+  // or, to avoid repeating it, a dvsim.hjson file in a parent directory of the
+  // working directory. See hw/ip/prim/README.md.
+  sv_flist_gen_flags: ["--mapping=partner:prim_tech:all",
+                       "--mapping=lowrisc:systems:top_darjeeling:0.1"]
 
   // Override the required keys to customize the simulation flow. For instance,
   // the FuseSoC core file or the search paths provided to FuseSoC to find the
@@ -25,11 +38,11 @@
       name: fusesoc_core
       value: my:dv:chip_sim:0.1
     }
-    // Example 2: override the search paths to prioritize the selection of
-    // packages (with the same VLNV). The latter one wins.
+    // Example 2: override the search paths so that FuseSoC can find the
+    // partner cores named in the mappings above.
     {
       name: fusesoc_cores_root_dirs
-      value: ["--cores-root {proj_root}",
+      value: ["--cores-root {proj_root}/hw",
               "--cores-root my-custom-path-1",
               "--cores-root my-custom-path-2"]
     }
