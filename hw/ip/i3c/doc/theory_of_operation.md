@@ -256,6 +256,7 @@ This can provide useful diagnostic information about bus utilization, any uninte
 
 <!-- link to `./registers.md#targ_control--en_hdr_ddr` when the register field is available.-->
 Although the IP block offers HDR-DDR mode signaling, as a contingency, software may suppress the declaration of HDR-DDR mode support in the Target by clearing `TARG_CONTROL.EN_HDR_DDR` before enabling the Target.
+This field is not yet integrated into the register map, so the Target currently always declares support for HDR-DDR mode in its response to the GETCAPS CCC ([#31337](https://github.com/lowRISC/opentitan/issues/31337)).
 
 The software driver controls the signaling modes and speeds employed by the Controller, by the way that it constructs Command Descriptors.
 It may therefore avoid the use of HDR-DDR if necessary, even for Targets that _do_ declare support for HDR-DDR signaling.
