@@ -14,6 +14,7 @@ This IP block may be configured to implement additional Virtual Targets beyond t
 The TTI describes the behavior of all Virtual Targets, with each acting identically and in accordance with this specification.
 When Standby Controller support is enabled using [`TARG_CONTROL.STBY_CR_SUPPORT`](registers.md#targ_control--stby_cr_support), the first Virtual Target shall additionally implement the responsibilities of a Standby Controller as defined in the HCI and I3C Basic Specifications.
 In this role, configuration from the Standby Controller registers of the HCI override any TTI configuration for the first Virtual Target.
+This version of the IP block does not support the Standby Controller role, so the first Virtual Target always operates as a dedicated Target device.
 
 ## General approach
 
@@ -419,9 +420,8 @@ It comes in two forms:
 1. Standard Hot-Join, in which the Target issues a Start Request, and then proceeds to drive out the address 7'h02.
 2. Passive Hot-Join, in which the Target drives 7'h02 into an Arbitrable Address Header.
 
-When the first Virtual Target is configured to operate as a Standby Controller, the Hot-Join capability is available via the HCI-specified [Standby Controller Control register](registers.md#stby_cr_control--stby_cr_enable_init).
-
-In the event that Standby Controller support is not enabled, or the Target peripheral is operating on a bus of its own, an equivalent capability is available via the [`TARG_CONTROL`](registers.md#targ_control--hj_request) register.
+Software requests a Hot-Join via the [`TARG_CONTROL`](registers.md#targ_control--hj_request) register.
+The HCI also specifies a Hot-Join capability via the [Standby Controller Control register](registers.md#stby_cr_control--stby_cr_enable_init), but this version of the IP block does not support the Standby Controller role.
 
 ## Handling of Common Command Codes
 
